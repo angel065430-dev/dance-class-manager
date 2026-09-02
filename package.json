@@ -1,0 +1,50 @@
+{
+  "name": "dance-class-manager",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "舞蹈課程報名／請假／補課管理系統 — Vue 3 + TypeScript + Supabase 前端專案（Phase 1: Project Foundation）",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --noEmit -p tsconfig.app.json --composite false",
+    "lint": "eslint . --fix",
+    "lint:check": "eslint .",
+    "format": "prettier --write \"src/**/*.{ts,vue,css}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,vue,css}\"",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install --with-deps"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "vue": "^3.5.13",
+    "vue-router": "^4.4.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^22.7.5",
+    "@vitejs/plugin-vue": "^5.1.4",
+    "@vue/eslint-config-prettier": "^10.1.0",
+    "@vue/eslint-config-typescript": "^14.1.1",
+    "@vue/test-utils": "^2.4.6",
+    "@vue/tsconfig": "^0.5.1",
+    "eslint": "^9.13.0",
+    "eslint-plugin-vue": "^9.28.0",
+    "jsdom": "^25.0.1",
+    "prettier": "^3.3.3",
+    "supabase": "^2.116.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.2",
+    "vue-tsc": "^2.1.6"
+  }
+}

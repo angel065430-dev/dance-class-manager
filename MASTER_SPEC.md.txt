@@ -1,0 +1,1693 @@
+# MASTER_SPEC.md
+
+# Dance Class Manager
+
+## Master Product Specification
+
+**Project Name:** Dance Class Manager
+**Project Type:** Multi-user Web Application
+**Primary Language:** Traditional Chinese
+**Business Timezone:** Asia/Taipei
+**Current Architecture:** Vue 3 + TypeScript + Vite + Tailwind CSS + Supabase + Vercel
+
+---
+
+# 1. Project Overview
+
+建立一個正式的舞蹈課程管理系統，主要用於 Zumba 課程管理。
+
+系統必須同時提供：
+
+1. 學員前台
+2. 學員專區
+3. 老師／管理員後台
+
+系統不是單一 HTML Demo，也不是 LocalStorage 系統。
+
+所有正式業務資料必須儲存在 Supabase PostgreSQL，並支援多使用者與多瀏覽器即時同步。
+
+---
+
+# 2. Core Business Goals
+
+系統主要解決以下問題：
+
+* 課程報名
+* 整期報名
+* 多班整期報名
+* 單堂課報名
+* 假日快閃／特別活動課報名
+* 多堂特別課優惠
+* 優惠碼
+* 收款管理
+* 請假
+* 銷假
+* 補課
+* 補課審核
+* 學員管理
+* 運動中心學生管理
+* 動態補課名額
+* 每堂課不同的門禁密碼
+* 點名
+* 即時名額同步
+
+所有使用者在不同：
+
+* 瀏覽器
+* 手機
+* 電腦
+* 裝置
+
+開啟系統時，都必須以 Supabase 中央資料庫為準。
+
+不得出現：
+
+> 同一個瀏覽器修改後看起來正常，但其他瀏覽器仍然看到舊資料。
+
+---
+
+# 3. User Roles
+
+系統至少包含以下角色。
+
+## 3.1 Student
+
+一般學生。
+
+可以：
+
+* 查看課程
+* 報名
+* 查看自己的報名紀錄
+* 查看付款狀態
+* 請假
+* 在規則允許下取消請假
+* 使用補課資格
+* 預約補課
+* 查看補課狀態
+* 查看個人課程
+* 查看當日開門資訊
+
+學生不得：
+
+* 查看其他學生資料
+* 修改付款狀態
+* 修改課程名額
+* 修改其他學生資料
+* 直接核准自己的補課
+
+---
+
+## 3.2 External Center Student
+
+運動中心／外部場地學生。
+
+這類學生：
+
+* 不透過本系統付款
+* 不透過本系統正式報名課程
+* 必須先在系統中登記自己是哪一堂課的學生
+
+登記完成後才能：
+
+* 請假
+* 取得符合規則的補課資格
+* 申請補課
+
+---
+
+## 3.3 Admin
+
+老師／管理員。
+
+可以：
+
+* 管理場地
+* 管理期別
+* 管理班級
+* 管理每堂課
+* 管理報名
+* 管理付款
+* 管理優惠碼
+* 管理學生
+* 管理運動中心學生資格
+* 管理請假
+* 管理補課
+* 手動核准補課
+* 手動調整補課名額
+* 管理特別活動
+* 管理門禁密碼
+* 點名
+* 查看報表
+* 查看稽核紀錄
+
+---
+
+# 4. Authentication and Login
+
+## 4.1 Student Login
+
+學生需要有簡單的登入方式。
+
+預期使用：
+
+* 手機號碼作為主要識別資訊
+
+實際登入技術必須與 Supabase Auth 安全架構相容。
+
+不得：
+
+* 將 PIN 明碼直接存入前端
+* 使用 LocalStorage 作為正式身分驗證
+* 使用前端假登入作為正式安全機制
+
+學生重新整理頁面後，登入狀態應正常維持。
+
+---
+
+## 4.2 Admin Login
+
+管理員登入必須使用正式、安全的身份驗證。
+
+不得：
+
+* 在前端硬編碼管理員密碼
+* 使用 Logo 連點作為真正的安全機制
+* 只靠隱藏網址保護後台
+
+管理員權限必須由：
+
+* Supabase Auth
+* Role
+* Row Level Security
+
+共同控制。
+
+---
+
+# 5. Venue Management
+
+系統支援多個場地。
+
+預設可能包含：
+
+* 自營教室
+* 運動中心
+* 未來新增場地
+
+管理員可以：
+
+* 新增場地
+* 編輯場地
+* 停用場地
+* 必要時刪除未使用的資料
+
+重要交易資料不得因為場地停用而遺失。
+
+---
+
+## 5.1 Venue Information
+
+每個場地至少包含：
+
+* 唯一 ID
+* 場地名稱
+* 詳細地址
+* 營運模式
+* 是否啟用
+* 前台是否顯示
+
+---
+
+## 5.2 Venue Business Modes
+
+### A. Self-operated Studio
+
+自營教室。
+
+功能包含：
+
+* 線上報名
+* 整期報名
+* 單堂報名
+* 收款
+* 優惠碼
+* 請假
+* 補課
+
+---
+
+### B. External Center
+
+運動中心／外部場地。
+
+特性：
+
+* 不透過本系統收款
+* 不透過本系統處理正式課程報名
+* 學生必須先登記自己的班級資格
+* 支援請假
+* 支援補課
+
+---
+
+# 6. Terms
+
+每個場地可以有不同期別。
+
+每個期別至少包含：
+
+* 名稱
+* 所屬場地
+* 開始日期
+* 結束日期
+* 停課日期
+* 請假規則
+* 是否啟用
+
+範例：
+
+* 2026 年 9-10 月秋季班
+* 2026 年 9 月運動中心班
+
+不同場地可以有不同期別。
+
+---
+
+# 7. Regular Classes
+
+系統支援常態課程。
+
+每個班級至少包含：
+
+* 班級名稱
+* 場地
+* 期別
+* 上課星期
+* 上課時間
+* 上課日期
+* 人數上限
+* 營運模式
+* 整期價格
+* 單堂價格
+* 是否開放報名
+
+目前主要課程類型為：
+
+> Zumba
+
+系統架構仍應保留未來擴充其他課程的能力。
+
+---
+
+# 8. Full-Term Registration
+
+學生可以報名整期課程。
+
+重要規則：
+
+* 整期報名者可以一次報名多個班級。
+* 系統應支援將多個整期班級加入同一筆訂單。
+* 每個班級的資格與名額必須獨立驗證。
+
+---
+
+## 8.1 Halfway Registration Rule
+
+常態班可以設定：
+
+> 課程進行超過一半後，停止整期報名。
+
+此規則預設為啟用。
+
+計算方式應根據：
+
+* 已完成課堂數
+* 總課堂數
+
+判斷。
+
+當已完成課堂數達到規定比例後：
+
+* 停止整期報名
+* 如該課程允許，學生仍可以報名單堂課
+
+---
+
+# 9. Single-Session Registration
+
+學生可以報名單堂課。
+
+支援：
+
+* 選擇一堂或多堂
+* 同一訂單內報名多個日期
+
+單堂課與整期課的資格必須分開管理。
+
+---
+
+# 10. Special Events
+
+系統支援：
+
+* 假日快閃課
+* 特別活動
+* 單次活動
+* 多場特別課系列
+
+每個活動至少包含：
+
+* 活動名稱
+* 場地
+* 日期
+* 時間
+* 人數上限
+* 單堂價格
+* 活動說明
+* 是否啟用
+
+---
+
+## 10.1 Multiple Event Registration
+
+學生可能一次報名多堂特別活動。
+
+系統必須支援：
+
+* 一次選擇多堂活動
+* 同一筆訂單結帳
+
+---
+
+## 10.2 Special Event Package Discount
+
+管理員可以設定：
+
+> 報名多堂特別活動時享有優惠。
+
+優惠規則應可設定，例如：
+
+* 任選 2 堂優惠
+* 任選 3 堂優惠
+* 固定金額折扣
+* 百分比折扣
+* 套裝價格
+
+優惠計算必須由後端驗證。
+
+不得只相信前端計算。
+
+---
+
+# 11. Coupon System
+
+系統必須支援優惠碼。
+
+管理員可以建立：
+
+* 優惠碼
+* 折扣金額
+* 折扣百分比
+* 有效日期
+* 使用次數限制
+* 每位學生使用限制
+* 最低消費金額
+* 適用場地
+* 適用課程
+* 適用期別
+* 適用特別活動
+
+優惠碼可用於提供給長期支持學生的優惠。
+
+---
+
+## 11.1 Coupon Validation
+
+優惠碼必須由後端驗證。
+
+至少檢查：
+
+* 是否存在
+* 是否啟用
+* 是否過期
+* 是否尚未開始
+* 是否達到總使用上限
+* 是否超過學生個人使用上限
+* 是否符合最低消費
+* 是否適用於目前商品
+
+最終折扣金額由伺服器計算。
+
+---
+
+# 12. Payment
+
+自營教室課程支援：
+
+* 銀行轉帳
+* LINE 轉帳
+* 現金
+
+由於 QR Code 可能有時間限制，因此：
+
+> 不依賴 QR Code。
+
+LINE 付款資訊主要提供：
+
+* LINE ID
+* 付款說明
+
+---
+
+## 12.1 Payment Information
+
+管理員可以設定：
+
+### Bank Transfer
+
+* 銀行名稱
+* 銀行代碼
+* 帳號
+* 戶名
+* 匯款說明
+
+### LINE
+
+* LINE ID
+* 付款說明
+
+---
+
+## 12.2 Payment Status
+
+付款狀態至少包含：
+
+* pending
+* paid
+* rejected
+* cancelled
+
+學生不得自行將付款狀態修改為：
+
+> paid
+
+付款確認由管理員處理。
+
+---
+
+# 13. Student Registration Data
+
+學生報名時可能需要提供：
+
+* 姓名
+* 手機號碼
+* LINE 暱稱
+* 匯款帳號後五碼
+
+系統應允許學生在必要時補充或更新：
+
+* LINE 暱稱
+* 帳號後五碼
+
+相關修改應受到權限控制。
+
+---
+
+# 14. External Center Student Membership
+
+運動中心學生因為不是透過本系統報名，所以系統無法自動知道其課程資格。
+
+因此學生必須先：
+
+> 登記自己是哪一堂課的學生。
+
+系統需要建立：
+
+> External Student Membership
+
+至少記錄：
+
+* 學生
+* 班級
+* 有效期間
+* 狀態
+
+只有具有有效資格的學生才能：
+
+* 對該班級請假
+* 因符合規則取得補課資格
+
+---
+
+# 15. Leave System
+
+學生可以線上請假。
+
+---
+
+## 15.1 Leave Deadline
+
+正常規則：
+
+> 必須在課程開始前至少 90 分鐘完成請假。
+
+系統必須根據：
+
+* 實際課程開始日期
+* 實際課程開始時間
+* Asia/Taipei 時區
+
+進行判斷。
+
+---
+
+## 15.2 Admin Manual Exception
+
+管理員可以在特殊情況下：
+
+* 手動建立請假
+* 手動修改請假
+
+這類操作必須留下：
+
+* 操作者
+* 時間
+* 原因
+
+稽核紀錄。
+
+---
+
+## 15.3 Leave Cancellation
+
+學生可以在規則允許時取消請假。
+
+但如果：
+
+> 原本釋出的名額已經被其他補課學生使用。
+
+系統必須防止造成資料矛盾。
+
+取消請假前必須重新驗證目前名額狀態。
+
+### 15.3.1 已確認規則（2026-09-02 業主確認，Phase 0 Round 2）
+
+若請假所釋出的名額已被其他補課學生使用（補課預約狀態已進入 `confirmed`／`admin_approved`／`attended` 等已使用狀態）：
+
+> 禁止學生取消請假。
+
+系統應拒絕該取消操作並回傳明確錯誤訊息。管理員仍可透過第 15.2 節「Admin Manual Exception」機制人工介入處理特殊情況，但該操作必須留下稽核紀錄（操作者、時間、原因）。
+
+---
+
+# 16. Makeup Credits
+
+符合規則的請假可能產生補課資格。
+
+補課資格與原始請假紀錄必須有明確關聯。
+
+---
+
+## 16.1 Makeup Validity Window
+
+目前正式規則：
+
+> 補課申請日期必須在請假課程日期前後 20 天內。
+
+也就是：
+
+```text
+Leave Date - 20 Days
+至
+Leave Date + 20 Days
+```
+
+超過有效期限後：
+
+* 不可再使用該補課資格
+
+---
+
+# 17. Venue Isolation
+
+補課資格預設採取：
+
+> 場地隔離。
+
+也就是：
+
+* 自營教室的補課資格
+* 運動中心的補課資格
+
+預設不能互相使用。
+
+除非未來新增明確規則。
+
+---
+
+# 18. Same-Class Makeup Rules
+
+## 18.1 Full-Term Students
+
+整期報名學生：
+
+> 不可以使用補課資格，補到自己原本已經擁有上課資格的同一班級／同一堂。
+
+原因是學生原本已經有該堂課的上課權利。
+
+---
+
+## 18.2 Single-Session Students
+
+單堂報名學生：
+
+> 可以在符合補課規則的情況下，申請補到同一班級的其他日期。
+
+但不得：
+
+* 對自己已經報名的同一堂課重複預約
+* 產生重複出席資格
+
+---
+
+# 19. Makeup Reservation
+
+學生可以查看符合資格的補課課程。
+
+系統必須自動篩選：
+
+* 在補課有效期限內
+* 同一場地
+* 學生尚未擁有該堂出席資格
+* 尚有補課名額
+* 符合班級規則
+
+---
+
+## 19.1 Makeup Approval
+
+補課申請可以採取：
+
+* 自動核准
+* 管理員審核
+
+管理員可以設定或依個案決定。
+
+---
+
+## 19.2 Manual Makeup Approval
+
+如果老師知道有人臨時無法上課，即使尚未正式透過系統完成一般流程，管理員也可以：
+
+> 手動確認／核准補課申請。
+
+這是正式需求。
+
+管理員手動操作時：
+
+* 必須重新檢查名額
+* 必須留下稽核紀錄
+* 可以要求填寫原因
+
+---
+
+# 20. Makeup Confirmation
+
+補課學生在補課前需要再次確認。
+
+正式規則：
+
+> 最晚必須在開課前 1 小時完成確認。
+
+如果：
+
+* 超過確認時間仍未確認
+* 或確認後實際缺席
+
+系統可以依商業規則將該補課資格視為已使用。
+
+重要原則：
+
+> 補課資格不得因未確認而無限期保留。
+
+實際狀態流程必須明確設計。
+
+---
+
+# 21. Self-Operated Studio Capacity
+
+自營教室課程需要管理：
+
+* 整期學生
+* 單堂學生
+* 請假學生
+* 補課學生
+
+名額必須由資料庫最終判斷。
+
+前端顯示的剩餘名額只能作為資訊。
+
+---
+
+## 21.1 Concurrency Requirement
+
+不得使用以下不安全流程：
+
+1. 前端讀取剩餘名額
+2. 前端自行減 1
+3. 直接建立報名
+
+正式報名與補課預約必須：
+
+* 在資料庫重新驗證
+* 使用交易／RPC／適當鎖定
+* 避免多人同時搶最後一個名額時超賣
+
+---
+
+# 22. External Center Makeup Capacity
+
+運動中心學生不透過本系統正式報名。
+
+因此系統無法知道實際全部學生人數。
+
+管理員需要：
+
+> 為每一堂課預先設定「固定基礎補課名額」。
+
+例如：
+
+```text
+Base Makeup Capacity = 2
+```
+
+然後加上：
+
+> 該堂課當天的請假人數。
+
+---
+
+## 22.1 Official Capacity Formula
+
+運動中心某一堂課目前可補課人數：
+
+```text
+Base Makeup Capacity
++
+Number of Eligible Leaves for This Session
++
+Manual Adjustment
+-
+Reserved Makeup Seats
+```
+
+也就是：
+
+```text
+可補課名額
+=
+預設補課名額
++
+當天請假人數
++
+人工調整
+-
+已預約補課人數
+```
+
+---
+
+## 22.2 Important Requirement
+
+系統必須保留每個組成部分。
+
+不得只存：
+
+> 剩餘補課名額 = 5
+
+而失去計算來源。
+
+管理員應能看到：
+
+* 基礎補課名額
+* 當日請假人數
+* 人工調整
+* 已補課預約人數
+* 最終剩餘名額
+
+---
+
+# 23. Manual Capacity Adjustment
+
+管理員可以在特殊情況下手動調整補課名額。
+
+例如：
+
+* 老師知道有人臨時無法出席
+* 現場空間實際增加
+* 特殊活動
+
+人工調整必須：
+
+* 記錄原因
+* 記錄操作者
+* 記錄時間
+
+---
+
+# 24. Door Access
+
+自營教室可能每天有不同的開門密碼。
+
+而且通常：
+
+> 教室前一天才會提供密碼。
+
+因此門禁密碼不能只設定在 Venue。
+
+必須支援：
+
+> 每一個 Class Session 獨立設定門禁資訊。
+
+---
+
+## 24.1 Door Access Data
+
+每一堂課可以包含：
+
+* 密碼
+* 是否已公布
+* 公布時間
+* 備註
+
+---
+
+## 24.2 Student Visibility
+
+只有符合資格的學生才能查看門禁資訊。
+
+例如：
+
+* 已完成報名
+* 或已完成補課預約
+* 並符合付款或其他上課資格
+
+請假的學生：
+
+> 不應顯示當日門禁密碼。
+
+---
+
+# 25. Attendance
+
+管理員需要點名功能。
+
+每堂課可以記錄：
+
+* 學生
+* 出席
+* 缺席
+* 補課出席
+* 備註
+
+點名紀錄必須與：
+
+* 正常報名
+* 單堂報名
+* 補課
+
+建立明確關聯。
+
+---
+
+# 26. Seat Transfer
+
+自營課程可以支援席位轉讓。
+
+例如：
+
+* 整期課程轉讓
+* 單堂課轉讓
+
+管理員需要能追蹤：
+
+* 原持有人
+* 新持有人
+* 轉讓時間
+* 原因
+
+重要歷史資料不得消失。
+
+---
+
+# 27. Admin Dashboard
+
+管理後台需要提供：
+
+* 即時課程名額
+* 今日課程
+* 報名狀態
+* 待確認付款
+* 待審核補課
+* 即將到期的補課資格
+
+---
+
+# 28. Registration Management
+
+管理員可以查看：
+
+* 報名學生
+* 報名課程
+* 報名類型
+* 訂單
+* 優惠碼
+* 應付金額
+* 付款狀態
+
+並可以：
+
+* 確認付款
+* 修改必要資訊
+* 進行取消或其他合法狀態變更
+
+重要操作必須保留歷史紀錄。
+
+---
+
+# 29. Student Management
+
+管理員可以查看：
+
+* 學生資料
+* 報名紀錄
+* 付款紀錄
+* 請假紀錄
+* 補課資格
+* 補課紀錄
+
+學生只能查看自己的資料。
+
+---
+
+# 30. CSV Export
+
+管理員至少應能匯出：
+
+* 報名名冊
+* 學生名冊
+* 課程名冊
+
+格式可以使用：
+
+> CSV
+
+---
+
+# 31. Calendar Integration
+
+學生可以將課程加入行事曆。
+
+至少考慮：
+
+* Google Calendar
+* iCalendar / ICS
+
+實作方式可以依實際開發階段決定。
+
+---
+
+# 32. Brand Settings
+
+管理員可以設定：
+
+* 教室名稱
+* 系統名稱
+* Logo
+* Hero Image
+* 首頁標題
+* Slogan
+* 公告
+* FAQ
+* 上課須知
+* 聯絡方式
+* LINE ID
+
+所有品牌設定必須儲存在中央資料庫。
+
+不同瀏覽器應看到相同設定。
+
+---
+
+# 33. FAQ and Rules
+
+前台應提供可由管理員維護的：
+
+* 上課須知
+* 報名規則
+* 請假規則
+* 補課規則
+* 退費規則
+* 轉讓規則
+
+重要商業規則不應只存在於前端文字。
+
+實際業務流程也必須由後端驗證。
+
+---
+
+# 34. Realtime Requirements
+
+系統需要支援即時資料更新。
+
+當以下資料變動時：
+
+* 名額
+* 報名
+* 補課
+* 課程狀態
+* 公告
+
+其他使用者應能在合理時間內看到最新資料。
+
+可以使用：
+
+> Supabase Realtime
+
+但 Realtime 只負責：
+
+> UI 更新。
+
+最終資料正確性仍必須由：
+
+> Database Transaction / RPC / Server-side Validation
+
+保證。
+
+---
+
+# 35. Database Source of Truth
+
+Supabase PostgreSQL 是唯一正式資料來源。
+
+不得使用：
+
+* LocalStorage
+* SessionStorage
+* Vue Store
+* Browser Cache
+
+作為正式業務資料來源。
+
+LocalStorage 可以用於：
+
+* UI 偏好
+* 暫存草稿
+
+但不能作為：
+
+* 正式報名
+* 付款
+* 名額
+* 請假
+* 補課
+
+的唯一資料來源。
+
+---
+
+# 36. Security Requirements
+
+系統必須使用：
+
+* Supabase Auth
+* PostgreSQL
+* Row Level Security
+
+---
+
+## 36.1 Student Data Isolation
+
+學生只能存取自己的：
+
+* Profile
+* Registrations
+* Orders
+* Payments
+* Leave Requests
+* Makeup Credits
+* Makeup Reservations
+
+不得存取其他學生私人資料。
+
+---
+
+## 36.2 Admin Authorization
+
+管理員操作必須受到角色權限控制。
+
+不得只依靠：
+
+* 前端 Route Guard
+* CSS
+* 隱藏按鈕
+
+作為真正安全機制。
+
+---
+
+# 37. Audit Log
+
+以下重要操作必須建立稽核紀錄：
+
+* 建立報名
+* 取消報名
+* 確認付款
+* 修改付款
+* 建立請假
+* 取消請假
+* 建立補課資格
+* 預約補課
+* 核准補課
+* 駁回補課
+* 手動調整名額
+* 手動例外處理
+* 轉讓席位
+
+Audit Log 至少包含：
+
+* 操作者
+* 角色
+* 操作類型
+* 資料類型
+* 資料 ID
+* 操作時間
+* 操作前資料
+* 操作後資料
+* 原因
+
+---
+
+# 38. Idempotency
+
+重要寫入操作必須避免重複提交。
+
+特別是：
+
+* 建立訂單
+* 完成報名
+* 使用優惠碼
+* 預約補課
+
+使用者：
+
+* 連續點擊
+* 網路重試
+* 重複送出
+
+不得造成：
+
+* 重複訂單
+* 重複扣優惠碼
+* 重複佔位
+* 重複建立補課
+
+---
+
+# 39. XSS Protection
+
+系統必須避免 XSS。
+
+不得直接使用：
+
+```text
+v-html
+innerHTML
+```
+
+渲染未經處理的使用者內容。
+
+Vue 一般文字插值：
+
+```text
+{{ value }}
+```
+
+為預設安全方式。
+
+---
+
+# 40. Date and Time
+
+所有業務時間必須使用：
+
+> Asia/Taipei
+
+必須避免不同瀏覽器日期解析結果不同。
+
+不得依賴不明確的字串日期解析。
+
+應使用：
+
+* 明確 ISO 格式
+* 明確 Date Parsing
+* 可靠的日期工具
+
+所有時間規則必須統一處理。
+
+包括：
+
+* 請假截止時間
+* 補課截止時間
+* 門禁公布時間
+* 課程開始時間
+
+---
+
+# 41. Production Deployment
+
+前端部署目標：
+
+> Vercel
+
+資料庫與身份驗證：
+
+> Supabase
+
+---
+
+# 42. Environment Variables
+
+前端可以使用：
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+```
+
+不得將以下資訊放入前端：
+
+* SUPABASE_SERVICE_ROLE_KEY
+* Database Password
+* Admin Secret
+* 私人 API Key
+
+---
+
+# 43. Required Database Entities
+
+初步預期包含以下主要資料模型。
+
+```text
+profiles
+roles
+
+venues
+terms
+classes
+class_sessions
+
+registrations
+
+orders
+order_items
+payments
+
+coupons
+coupon_redemptions
+
+external_student_memberships
+
+leave_requests
+
+makeup_credits
+makeup_reservations
+
+special_events
+special_event_sessions
+special_event_packages
+
+door_access
+
+attendance
+
+seat_transfers
+
+audit_logs
+
+idempotency_keys
+```
+
+實際 Schema 在開發 Phase 中建立。
+
+AI 必須：
+
+* 分析關聯
+* 建立 Foreign Keys
+* 建立 Unique Constraints
+* 建立必要 Indexes
+* 建立 RLS Policies
+
+不得直接無規劃建立大量資料表。
+
+---
+
+# 44. Recommended Development Phases
+
+---
+
+## Phase 0
+
+Project Audit & Architecture Planning
+
+內容：
+
+* 檢查現有專案
+* Gap Analysis
+* 架構規劃
+* Database Schema Proposal
+* Security Strategy
+
+---
+
+## Phase 1
+
+Project Foundation
+
+建立：
+
+* Vue 3
+* TypeScript
+* Vite
+* Tailwind
+* Routing
+* 基本專案結構
+* Supabase Client
+
+---
+
+## Phase 2
+
+Database Foundation
+
+建立：
+
+* Profiles
+* Roles
+* Venues
+* Terms
+* Classes
+* Class Sessions
+
+以及：
+
+* Foreign Keys
+* Indexes
+* RLS 基礎架構
+
+---
+
+## Phase 3
+
+Authentication & Authorization
+
+建立：
+
+* Student Authentication
+* Admin Authentication
+* Role Management
+* RLS Policies
+
+---
+
+## Phase 4
+
+Admin Foundation
+
+建立：
+
+* Admin Layout
+* Dashboard
+* Venue Management
+* Term Management
+* Class Management
+* Session Management
+
+---
+
+## Phase 5
+
+Student Frontend & Registration
+
+建立：
+
+* Course Browsing
+* Full-Term Registration
+* Multi-Class Registration
+* Single-Session Registration
+* Orders
+
+---
+
+## Phase 6
+
+Payment & Coupons
+
+建立：
+
+* Payment Records
+* Admin Payment Confirmation
+* Coupon System
+* Server-side Price Validation
+
+---
+
+## Phase 7
+
+External Student Membership
+
+建立：
+
+* External Center Student Registration
+* Class Membership
+* Membership Validation
+
+---
+
+## Phase 8
+
+Leave System
+
+建立：
+
+* Student Leave
+* 90-minute Deadline
+* Admin Override
+* Leave Cancellation
+* Audit Logs
+
+---
+
+## Phase 9
+
+Makeup System
+
+建立：
+
+* Makeup Credits
+* ±20-day Validity
+* Venue Isolation
+* Same-Class Rules
+* Makeup Reservation
+* Admin Approval
+* Manual Approval
+* External Center Capacity Formula
+
+---
+
+## Phase 10
+
+Special Events
+
+建立：
+
+* Special Events
+* Multiple Event Registration
+* Event Packages
+* Multi-class Discounts
+
+---
+
+## Phase 11
+
+Door Access & Attendance
+
+建立：
+
+* Per-session Door Password
+* Password Publish Status
+* Student Access Rules
+* Attendance
+
+---
+
+## Phase 12
+
+Realtime & Production Hardening
+
+建立與測試：
+
+* Supabase Realtime
+* Concurrency Protection
+* Idempotency
+* Error Handling
+* Security Review
+* RLS Review
+
+---
+
+## Phase 13
+
+Production Testing
+
+完整測試：
+
+* Registration
+* Last Seat
+* Concurrent Registration
+* Coupon
+* Payment
+* Leave
+* Makeup
+* External Center Capacity
+* Special Events
+* Authentication
+* Authorization
+* RLS
+
+---
+
+# 45. Definition of Done
+
+功能完成不代表：
+
+> 畫面做出來。
+
+一個功能完成必須同時滿足：
+
+* UI 完成
+* Database 完成
+* Business Rules 正確
+* Authorization 正確
+* RLS 正確
+* Concurrency 已處理
+* Error Handling 完成
+* Tests 通過
+* Build 通過
+
+---
+
+# 46. Requirement Change Rules
+
+未來需求變更時：
+
+1. 先修改 MASTER_SPEC.md
+2. 清楚記錄新規則
+3. 檢查是否影響資料庫
+4. 檢查是否影響既有資料
+5. 建立 Migration
+6. 修改程式
+7. 測試
+
+不得只修改程式碼而不更新規格。
+
+---
+
+# 47. Source of Truth Priority
+
+當需求衝突時，優先順序：
+
+```text
+最新明確確認的需求
+        ↓
+MASTER_SPEC.md
+        ↓
+AI_INSTRUCTIONS.md
+        ↓
+現有正式程式碼
+        ↓
+舊程式碼
+        ↓
+舊 Prompt
+        ↓
+AI 自行猜測
+```
+
+AI 不得自行恢復舊需求。
+
+---
+
+# 48. Important Principle
+
+本系統的核心目標不是：
+
+> 盡快產生大量程式碼。
+
+核心目標是：
+
+> 建立一個資料正確、安全、多人同時使用不會出錯、可以長期維護的正式課務管理系統。
+
+所有關鍵操作都必須優先考慮：
+
+1. Data Consistency
+2. Security
+3. Authorization
+4. Concurrency
+5. Auditability
+6. Maintainability
+
+---
+
+# 49. Phase 0 Confirmed Decisions Addendum（2026-09-02，Round 2）
+
+以下為業主於 Phase 0 專案稽核階段第二輪確認的正式商業規則，補充於原條文之外，未來實作與需求變更時應以此附錄為準（詳見 `PHASE_0_AUDIT_REPORT.md` 完整分析）。依第 46 節需求變更規則記錄。
+
+## 49.1 學生登入方式
+
+學生登入採用 Supabase Auth 原生 Phone + Password 機制。手機號碼為識別帳號，PIN（6 位數字）對應 Supabase Auth 的密碼欄位，不使用合成 Email、簡訊 OTP 或自訂 JWT 作為登入機制。
+
+## 49.2 PIN 規則
+
+1. PIN 為 6 位數字。
+2. 禁止過度簡單的 PIN（例如全部相同數字、連續遞增/遞減）。
+3. PIN 不得以明碼存放，完全交由 Supabase Auth 密碼機制處理。
+4. 忘記 PIN 第一版由管理員協助重設，不提供自助簡訊重設。
+
+## 49.3 請假取消規則
+
+見第 15.3.1 節：名額已被使用時禁止取消請假。
+
+## 49.4 補課核准模式
+
+第一版全系統預設自動核准，管理員保留手動核准／駁回／建立／調整名額的完整能力。不依場地／班級／課堂分別設定核准模式。
+
+## 49.5 運動中心補課基礎名額
+
+`default_base_makeup_capacity` 設定於班級層級，建立課堂時帶入預設值，管理員可對單一課堂覆蓋調整。
+
+## 49.6 席位轉讓
+
+系統不處理轉讓雙方之間的金流，已付款原則上不退款。系統只記錄轉讓資格、原學生、受讓學生、轉讓時間、管理員處理紀錄與完整歷史稽核。
+
+## 49.7 管理員 MFA
+
+學生第一版不要求 MFA。管理員帳號於一般開發階段（Phase 3）先採用 Email+Password；正式上線前的安全性複查階段，強制要求管理員帳號啟用 TOTP 兩步驟驗證。
+
+## 49.8 CSV 匯出與行事曆整合
+
+CSV 匯出為正式上線前必須完成項目，非 Nice-to-have。Google Calendar／ICS 行事曆整合可排在核心報名/請假/補課功能之後實作。
+
+---
+
+# End of MASTER_SPEC.md

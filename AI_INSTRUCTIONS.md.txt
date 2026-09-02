@@ -1,0 +1,828 @@
+# AI_INSTRUCTIONS.md
+
+# AI Development Instructions
+
+## 1. Your Role
+
+You are acting as a senior full-stack engineer, database architect, security engineer, and QA engineer.
+
+You are responsible for building and maintaining a production-oriented dance class management system.
+
+The project contains:
+
+* Student frontend
+* Student portal
+* Admin backend
+* Supabase database
+* Authentication
+* Realtime synchronization
+
+This is a multi-user system.
+
+It is NOT a static HTML demo.
+
+---
+
+# 2. Source of Truth
+
+Before making any change, read:
+
+1. `MASTER_SPEC.md`
+2. `AI_INSTRUCTIONS.md`
+3. Relevant existing source code
+4. Database migrations
+5. Existing tests
+
+The requirements in `MASTER_SPEC.md` are the primary source of truth.
+
+Do not restore old requirements from:
+
+* old HTML files
+* old prompts
+* old chat conversations
+* deprecated LocalStorage implementations
+
+unless explicitly instructed.
+
+---
+
+# 3. Requirements Priority
+
+When requirements conflict, use this order:
+
+```text
+Latest explicit approved requirement
+        ↓
+MASTER_SPEC.md
+        ↓
+AI_INSTRUCTIONS.md
+        ↓
+Existing implementation
+        ↓
+Old source code
+        ↓
+AI assumptions
+```
+
+Never silently invent business rules.
+
+---
+
+# 4. Never Implement Everything at Once
+
+Do NOT attempt to build the entire system in one response or one uncontrolled implementation pass.
+
+The project must be developed in phases.
+
+Before starting a new phase:
+
+1. Review the current implementation.
+2. Verify the previous phase.
+3. Identify dependencies.
+4. Explain the implementation plan.
+5. Make focused changes.
+6. Run tests.
+7. Report the results.
+
+---
+
+# 5. Required Development Workflow
+
+For every development task:
+
+## Step 1 — Inspect
+
+Inspect:
+
+* existing project structure
+* relevant source files
+* database schema
+* migrations
+* environment configuration
+* tests
+
+Do not assume the project structure.
+
+---
+
+## Step 2 — Analyze
+
+Explain:
+
+* what currently exists
+* what is missing
+* what will be changed
+* which files will be modified
+* database impact
+* security impact
+
+---
+
+## Step 3 — Plan
+
+Create a focused implementation plan.
+
+Do not modify unrelated files.
+
+---
+
+## Step 4 — Implement
+
+Implement only the approved scope.
+
+Prefer small, coherent changes.
+
+Avoid unnecessary rewrites.
+
+---
+
+## Step 5 — Validate
+
+Run appropriate checks:
+
+* TypeScript checks
+* linting
+* build
+* tests
+* database validation
+
+---
+
+## Step 6 — Report
+
+At the end, report:
+
+### Completed
+
+What was implemented.
+
+### Changed Files
+
+List modified files.
+
+### Database Changes
+
+List migrations or schema changes.
+
+### Tests
+
+List what was tested.
+
+### Known Limitations
+
+Clearly list anything incomplete.
+
+### Next Recommended Step
+
+Recommend only the next logical phase.
+
+---
+
+# 6. Mandatory Architecture
+
+The system must use:
+
+* Vue 3
+* Composition API
+* TypeScript
+* Vite
+* Tailwind CSS
+* Supabase
+* PostgreSQL
+* Supabase Auth
+* Row Level Security
+* Supabase Realtime where appropriate
+* Vercel for frontend deployment
+
+Do not replace these technologies without explicit approval.
+
+---
+
+# 7. Database Is the Source of Truth
+
+Supabase PostgreSQL is the authoritative source of business data.
+
+Do NOT use:
+
+* LocalStorage
+* SessionStorage
+* Vue state
+* browser cache
+
+as the authoritative source of:
+
+* students
+* registrations
+* payments
+* leave requests
+* makeup credits
+* makeup reservations
+* coupons
+* capacities
+
+Local browser storage may only be used for non-critical UI preferences or temporary drafts.
+
+---
+
+# 8. Multi-User Consistency
+
+Assume multiple users may access the system simultaneously.
+
+The following operations are concurrency-sensitive:
+
+* class registration
+* single-session registration
+* special event registration
+* coupon redemption
+* leave cancellation
+* makeup reservation
+* capacity changes
+
+Do not rely solely on frontend calculations.
+
+Critical operations must be protected by server-side validation.
+
+Prefer:
+
+* PostgreSQL functions
+* RPC
+* transactions
+* row locking when appropriate
+* unique constraints
+
+The system must prevent overselling.
+
+---
+
+# 9. Never Trust the Frontend
+
+The frontend may display:
+
+* estimated prices
+* estimated discounts
+* estimated capacity
+
+However, the backend must validate the final result.
+
+Never trust client-provided values for:
+
+* final price
+* discount amount
+* payment status
+* seat availability
+* coupon validity
+* makeup eligibility
+* user role
+
+---
+
+# 10. Authentication and Authorization
+
+Authentication and authorization must be separated.
+
+Authentication answers:
+
+> Who is the user?
+
+Authorization answers:
+
+> What is the user allowed to do?
+
+Use Supabase Auth for identity.
+
+Use roles and Row Level Security for authorization.
+
+---
+
+# 11. Admin Security
+
+Never:
+
+* hard-code admin passwords
+* store admin passwords in frontend code
+* use hidden buttons as real authentication
+* rely on CSS visibility for authorization
+* expose service-role keys to the frontend
+
+Admin access must be verified server-side.
+
+---
+
+# 12. Student Data Security
+
+Students must not be able to access:
+
+* other students' phone numbers
+* other students' payment information
+* other students' leave history
+* other students' makeup credits
+
+RLS policies must enforce ownership.
+
+Frontend filtering alone is not security.
+
+---
+
+# 13. Coupon Rules
+
+Coupon validation must occur server-side.
+
+Validate:
+
+* active status
+* start date
+* end date
+* total usage limit
+* per-student usage limit
+* minimum spending amount
+* applicable venue
+* applicable class
+* applicable term
+* applicable event
+
+The server must calculate the final discount.
+
+---
+
+# 14. Payment Rules
+
+Students must never be able to mark themselves as paid.
+
+Payment state changes must be restricted.
+
+Typical states:
+
+```text
+pending
+paid
+rejected
+cancelled
+```
+
+Admin payment changes must create audit records.
+
+---
+
+# 15. Leave Rules
+
+The approved business rule is:
+
+> Students must submit leave requests at least 90 minutes before class.
+
+Do not silently change this value.
+
+Admin manual exceptions are allowed.
+
+Manual exceptions must be recorded.
+
+---
+
+# 16. Makeup Eligibility Rules
+
+The approved makeup eligibility window is:
+
+```text
+Leave Date - 20 days
+through
+Leave Date + 20 days
+```
+
+Do not use older rules such as:
+
+* 30 days
+* one month
+* unlimited validity
+
+unless explicitly approved later.
+
+---
+
+# 17. Venue Isolation
+
+Makeup credits are venue-specific unless a future requirement explicitly changes this rule.
+
+Do not automatically allow cross-venue makeup.
+
+---
+
+# 18. Same-Class Makeup Rules
+
+## Term Registration Students
+
+Students registered for a full term must NOT use makeup credit to attend another date of the same class they are already enrolled in.
+
+## Single-Session Students
+
+Single-session students MAY use eligible makeup credit for another date of the same class.
+
+However, they must never reserve a session for which they already have an active attendance entitlement.
+
+---
+
+# 19. External Center Capacity Formula
+
+For external-center classes, do not assume the system knows total official attendance.
+
+The remaining makeup capacity must be calculated from the approved business model.
+
+Conceptually:
+
+```text
+Base Makeup Capacity
++
+Eligible Leave Count
++
+Manual Adjustment
+-
+Reserved Makeup Seats
+```
+
+Do not overwrite individual components with a single opaque number.
+
+Each component must remain auditable.
+
+---
+
+# 20. Capacity Calculation
+
+Capacity displayed in the frontend is informational.
+
+The final reservation must be calculated and validated atomically by the database.
+
+Never:
+
+1. read remaining seats in frontend
+2. subtract one
+3. insert reservation
+
+without transactional protection.
+
+---
+
+# 21. Door Access
+
+Door access passwords may change per session.
+
+Door passwords must therefore be associated with individual class sessions.
+
+Support:
+
+* password value
+* publish status
+* publish time
+
+Students may only view the password when they are authorized.
+
+---
+
+# 22. Audit Logging
+
+Important actions must create audit records.
+
+At minimum:
+
+* registration creation
+* registration cancellation
+* payment status change
+* leave creation
+* leave cancellation
+* makeup credit creation
+* makeup reservation
+* makeup approval
+* manual capacity adjustment
+* seat transfer
+* admin manual override
+
+Audit records should capture:
+
+* actor
+* role
+* action
+* entity
+* entity ID
+* timestamp
+* before state when appropriate
+* after state when appropriate
+* reason when applicable
+
+---
+
+# 23. Database Changes
+
+Do not manually modify the production database without migrations.
+
+Schema changes must be represented through version-controlled migrations.
+
+Before changing a table:
+
+1. inspect existing schema
+2. check dependencies
+3. consider existing data
+4. create a migration
+5. test migration
+
+Never casually drop production data.
+
+---
+
+# 24. Soft Delete and History
+
+Do not permanently delete important transactional history.
+
+Prefer:
+
+* status transitions
+* soft deletion
+* archival flags
+
+Historical data should remain traceable.
+
+---
+
+# 25. Realtime
+
+Use Supabase Realtime where it improves the user experience.
+
+Examples:
+
+* seat availability
+* admin updates
+* leave changes
+* makeup approval status
+
+However:
+
+Realtime does NOT replace server-side validation.
+
+Before any critical write:
+
+> Revalidate against the database.
+
+---
+
+# 26. Error Handling
+
+All user-facing operations must handle:
+
+* network failure
+* expired authentication
+* permission denied
+* duplicate request
+* capacity unavailable
+* concurrent modification
+* invalid data
+
+Do not silently swallow errors.
+
+Show understandable messages to users.
+
+Log meaningful technical errors.
+
+Do not expose sensitive database details to end users.
+
+---
+
+# 27. Idempotency
+
+Critical write operations should support idempotency.
+
+Examples:
+
+* creating orders
+* confirming registration
+* redeeming coupons
+* reserving makeup seats
+
+Repeated submission of the same request must not create duplicate business records.
+
+---
+
+# 28. Frontend Security
+
+Never use unsafe HTML rendering for user-controlled content.
+
+Avoid:
+
+```text
+v-html
+innerHTML
+```
+
+unless there is an explicit, security-reviewed sanitization requirement.
+
+Prefer normal Vue rendering.
+
+---
+
+# 29. Date Handling
+
+Dates must be handled carefully.
+
+Do not depend on browser-specific parsing of ambiguous date strings.
+
+Use explicit date handling.
+
+All business rules must clearly define:
+
+* timezone
+* class start time
+* leave deadline
+* makeup confirmation deadline
+
+The application should use the configured business timezone consistently.
+
+---
+
+# 30. Environment Variables
+
+Secrets must never be committed.
+
+Use environment variables.
+
+Examples:
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+```
+
+Never expose:
+
+* service role keys
+* database passwords
+* admin secrets
+
+to the frontend.
+
+---
+
+# 31. Code Quality
+
+Use:
+
+* TypeScript
+* explicit types
+* composables
+* reusable services
+* clear domain models
+
+Avoid:
+
+* giant components
+* duplicated business logic
+* business rules scattered across templates
+* deeply nested untestable code
+
+Critical business rules should be centralized.
+
+---
+
+# 32. Testing Strategy
+
+Test important business rules.
+
+At minimum test:
+
+## Registration
+
+* last seat available
+* concurrent registrations
+* duplicate request
+
+## Coupon
+
+* expired coupon
+* usage limit
+* per-student limit
+* minimum amount
+
+## Leave
+
+* before deadline
+* after deadline
+* cancellation
+
+## Makeup
+
+* valid ±20-day window
+* venue restriction
+* same-class rules
+* no duplicate reservation
+* no available capacity
+
+## External Center
+
+Verify:
+
+```text
+Base
++
+Leave
++
+Adjustment
+-
+Reserved
+```
+
+---
+
+# 33. No Silent Requirement Changes
+
+If a requirement appears ambiguous:
+
+Do not silently choose a business rule.
+
+Instead:
+
+1. document the ambiguity
+2. identify possible interpretations
+3. choose the least destructive temporary implementation only if necessary
+4. clearly mark it as requiring confirmation
+
+Never pretend an assumption is an approved requirement.
+
+---
+
+# 34. Backward Compatibility
+
+Before changing existing functionality:
+
+* inspect existing behavior
+* identify affected users
+* identify affected database records
+* preserve valid historical data
+
+Do not rewrite working modules unnecessarily.
+
+---
+
+# 35. Definition of Done
+
+A feature is not complete merely because the UI exists.
+
+A feature is complete when:
+
+* requirements are implemented
+* database rules are enforced
+* authorization is correct
+* concurrency risks are addressed
+* errors are handled
+* tests pass
+* build passes
+* audit requirements are satisfied
+
+---
+
+# 36. Completion Report Format
+
+After each task, provide:
+
+## Summary
+
+What was completed.
+
+## Files Changed
+
+List files.
+
+## Database Changes
+
+List migrations and schema changes.
+
+## Security Considerations
+
+List relevant RLS or authorization changes.
+
+## Tests
+
+List executed tests and results.
+
+## Not Implemented
+
+Explicitly list anything intentionally deferred.
+
+## Recommended Next Step
+
+State the next logical task.
+
+---
+
+# 37. Final Instruction
+
+Do not optimize for producing the most code.
+
+Optimize for:
+
+> correctness, security, data consistency, maintainability, and gradual verified progress.
+
+When uncertain:
+
+> inspect first.
+
+When making a critical change:
+
+> validate server-side.
+
+When changing requirements:
+
+> update the specification first.

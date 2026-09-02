@@ -1,0 +1,46 @@
+{
+  // Round 3 修正：不再 extends "@tsconfig/node22/tsconfig.json"。
+  //
+  // 已證實（見 PHASE_1_COMPLETION_REPORT.md Round 3）：TypeScript 在解析 "extends"
+  // 鏈時，會對鏈上每一個檔案自己寫的 enum 型選項（例如 "lib"）逐檔驗證，即使子設定檔
+  // 之後會覆寫該選項也一樣 —— 也就是說，只要 tsconfig.node.json 還在 extends
+  // @tsconfig/node22/tsconfig.json，TypeScript 就會先去驗證後者原始寫的
+  // "lib": ["es2024", "ESNext.Array", "ESNext.Collection", "ESNext.Iterator"]，
+  // 而目前釘選的 TypeScript 5.6.3 不認得後三個 lib 名稱，於是在還沒套用任何子設定
+  // 覆寫之前就先丟出 TS6046。Round 2 嘗試「保留 extends、子設定覆寫 lib」的做法，
+  // 已被本機實際 build 證明無效。
+  //
+  // 因此改採根本修正：完全移除 extends，直接把這三個 config 檔案
+  // （vite.config.ts / vitest.config.ts / playwright.config.ts）實際需要的選項
+  // 內聯寫在這裡。這帶來兩個好處：
+  //   1. 不再解析 @tsconfig/node22 的檔案內容，徹底避開這個相容性問題，
+  //      不需要升級 TypeScript，也不需要去猜測／鎖定 @tsconfig/node22 的舊版本號。
+  //   2. 不再跟著 @tsconfig/node22 未來的版本更新而被動連帶影響
+  //      （之後 npm install 到更新版的 @tsconfig/node22 也不會再讓這三個
+  //      無關緊要的小型設定檔重新中獎）。
+  // package.json 已同步移除 "@tsconfig/node22" 這個現在用不到的 devDependency。
+  //
+  // 下方選項是原本透過 extends 取得的有效設定（module/moduleResolution 是我方
+  // 既有的覆寫值，target/strict/esModuleInterop/skipLibCheck 則是延續
+  // @tsconfig/node22 的合理預設），只有 "lib" 改為 TypeScript 5.6.3 完整支援的
+  // "ES2023"（這三個 config 檔案本來就不需要 Iterator Helpers / Array 分組等
+  // 更新的 API）。
+  "include": ["vite.config.ts", "vitest.config.ts", "playwright.config.ts"],
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["node"],
+    "strict": true,
+    "esModuleInterop": true,
+    // 維持 true：這是延續 @tsconfig/node22 原本就有的設定，用途是略過對
+    // node_modules 內第三方 .d.ts 檔案本身的型別檢查（業界標準做法，Vue 官方
+    // 鷹架也是預設開啟），純粹是效能考量，跟這次修的兩個錯誤（TS6046/TS2688）
+    // 完全無關 —— 兩個錯誤都發生在「解析 compilerOptions 本身」與「解析 types
+    // 陣列指到的套件」，skipLibCheck 對這兩種錯誤都不起作用，不是拿來掩蓋問題用的。
+    "skipLibCheck": true
+  }
+}

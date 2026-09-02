@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+
+/*
+ * Phase 1 僅提供最基礎的全域樣式。
+ * 品牌色彩／字型等視覺系統，待 Phase 4 Admin Foundation 的品牌設定（MASTER_SPEC.md 第 32 節）
+ * 確立後，再回頭調整為可由後台設定的動態主題，此處先不假設任何未經確認的視覺規則。
+ */
+
+html,
+body,
+#app {
+  height: 100%;
+}

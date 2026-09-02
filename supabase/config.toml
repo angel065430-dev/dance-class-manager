@@ -1,0 +1,48 @@
+# Supabase CLI 基礎設定（Phase 1 建立，Phase 2 更新）。
+#
+# 本機開發環境設定骨架，用 `supabase start` 啟動本機 Postgres 做
+# Schema/RPC/RLS 開發與測試（呼應 PHASE_0_AUDIT_REPORT.md 第 8.3 節
+# 「Vitest + Supabase CLI + Playwright」的測試策略）。
+#
+# 明確聲明（避免誤解）：
+#   - `supabase/migrations/` 目錄自 Phase 2 起已建立第一批 migration
+#     （profiles/user_roles/venues/terms/classes/class_sessions/
+#      audit_logs/idempotency_keys 8 張表 + RLS 基礎，見
+#      PHASE_2_COMPLETION_REPORT.md）。執行 `supabase db reset` 會套用
+#      這些 migration。
+#   - 仍然不包含任何業務 RPC（報名/付款/請假/補課等），這些留待對應功能
+#     Phase 才會建立。
+#   - project_id 僅為本機開發識別用途，之後請依你實際建立的 Supabase 專案調整，
+#     不會影響雲端專案本身。
+
+project_id = "dance-class-manager"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["https://127.0.0.1:5173"]
+jwt_expiry = 3600
+enable_signup = true
+
+# 手機 + 密碼登入（見 PHASE_0_AUDIT_REPORT.md 第 4.3.1 節，Phase 3 才會實際串接）。
+[auth.sms]
+enable_signup = true
+enable_confirmations = false
+
+[realtime]
+enabled = true
