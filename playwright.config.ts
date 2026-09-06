@@ -1,10 +1,14 @@
 import { defineConfig, devices } from '@playwright/test'
 
 /**
- * Playwright 基礎設定（Phase 1）。
- * 此階段僅提供一個對首頁的 smoke test，不含任何業務流程測試。
- * 業務流程 e2e（報名搶位、優惠碼併發等，見 PHASE_0_AUDIT_REPORT.md 第 8.3 節）
- * 將於對應 Phase 完成後逐步補上。
+ * Playwright 基礎設定。
+ *
+ * E2E 測試使用 Vite 的 e2e mode，因此會載入：
+ *
+ *   .env.e2e
+ *
+ * 讓測試連線到本機 Supabase，而平常開發使用 .env.local
+ * 連線到雲端 Supabase。
  */
 export default defineConfig({
   testDir: './e2e',
@@ -13,19 +17,22 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
+
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: 'http://127.0.0.1:5173',
     trace: 'on-first-retry',
   },
+
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
   ],
+
   webServer: {
-    command: 'npm run preview',
-    url: 'http://localhost:4173',
+    command: 'npm run dev -- --mode e2e --host 127.0.0.1',
+    url: 'http://127.0.0.1:5173',
     reuseExistingServer: !process.env.CI,
   },
 })

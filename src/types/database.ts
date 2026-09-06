@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 手寫的資料庫型別（Registration MVP 範圍）。
  *
  * 正式的 `supabase gen types typescript` 需要連上真正的 Supabase 專案才能
@@ -100,8 +100,14 @@ export interface Registration {
 /** 「我的報名」/ Admin 報名清單頁用：registration + class/venue 名稱。 */
 export interface RegistrationWithClass extends Registration {
   class_name: string
+  venue_id: string
   venue_name: string
   term_name: string
+  total_amount: number
+  payment_status: 'pending' | 'paid'
+  payment_method: 'bank_transfer' | 'line_pay' | null
+  payment_reference: string | null
+  paid_at: string | null
 }
 
 export type RegistrationFailureReason = 'not_found' | 'not_open' | 'already_registered' | 'full'
@@ -120,3 +126,5 @@ export interface SubmitRegistrationsResult {
   registration_ids: string[]
   classes?: Array<{ class_id: string; class_name: string; registration_id: string }>
 }
+
+

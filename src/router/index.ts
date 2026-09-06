@@ -51,6 +51,24 @@ const router = createRouter({
       meta: { requiresAdmin: true },
     },
     {
+      path: '/admin/classes',
+      name: 'admin-classes',
+      component: () => import('@/pages/admin/AdminClassesView.vue'),
+      meta: { requiresAdmin: true },
+    },
+    {
+      path: '/admin/venues',
+      name: 'admin-venues',
+      component: () => import('@/pages/admin/AdminVenuesView.vue'),
+      meta: { requiresAdmin: true },
+    },
+    {
+      path: '/admin/terms',
+      name: 'admin-terms',
+      component: () => import('@/pages/admin/AdminTermsView.vue'),
+      meta: { requiresAdmin: true },
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: () => import('@/pages/NotFoundView.vue'),

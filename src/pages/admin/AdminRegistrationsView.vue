@@ -1,12 +1,9 @@
-<script setup lang="ts">
-/**
- * Admin 報名清單（唯讀，Registration MVP P0 範圍）。
- *
- * 完整的 Admin CRUD／報表／篩選 UI 留待 P1（REGISTRATION_MVP_PLAN.md 第 A
- * 節），這裡先提供最小可用的「依班級/期別篩選 + 依學生姓名/手機搜尋」。
- */
-import { ref, computed, onMounted } from 'vue'
-import { fetchAllRegistrationsForAdmin } from '@/services/registrations'
+﻿<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+import {
+  adminMarkOrderPaid,
+  fetchAllRegistrationsForAdmin,
+} from '@/services/registrations'
 
 type AdminRegistrationRow = Awaited<ReturnType<typeof fetchAllRegistrationsForAdmin>>[number]
 
@@ -15,10 +12,17 @@ const loading = ref(true)
 const errorMessage = ref('')
 const classFilter = ref('')
 const searchText = ref('')
+const confirmingOrderId = ref<string | null>(null)
+const actionMessage = ref('')
 
 const STATUS_TEXT: Record<string, string> = {
   active: '有效',
   cancelled: '已取消',
+}
+
+const PAYMENT_STATUS_TEXT: Record<string, string> = {
+  pending: '待付款',
+  paid: '已付款',
 }
 
 const classOptions = computed(() => {
@@ -29,16 +33,37 @@ const classOptions = computed(() => {
 const filteredRegistrations = computed(() => {
   return registrations.value.filter((r) => {
     if (classFilter.value && r.class_name !== classFilter.value) return false
+
     if (searchText.value) {
       const needle = searchText.value.trim()
-      const haystack = `${r.student_name ?? ''} ${r.student_phone ?? ''}`
+      const haystack =
+        `${r.student_name ?? ''} ${r.student_phone ?? ''} ${r.payment_reference ?? ''}`
+
       if (!haystack.includes(needle)) return false
     }
+
     return true
   })
 })
 
-onMounted(async () => {
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat('zh-TW', {
+    style: 'currency',
+    currency: 'TWD',
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
+
+function formatPaymentMethod(method: AdminRegistrationRow['payment_method']) {
+  if (method === 'bank_transfer') return '銀行轉帳'
+  if (method === 'line_pay') return 'LINE Pay'
+  return '尚未提交'
+}
+
+async function loadRegistrations() {
+  loading.value = true
+  errorMessage.value = ''
+
   try {
     registrations.value = await fetchAllRegistrationsForAdmin()
   } catch (err) {
@@ -46,25 +71,56 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+async function confirmPayment(reg: AdminRegistrationRow) {
+  const confirmed = window.confirm(
+    `確認已收到 ${reg.student_name ?? reg.student_phone ?? '此學生'} 的款項 ${formatCurrency(reg.total_amount)} 嗎？`,
+  )
+
+  if (!confirmed) return
+
+  confirmingOrderId.value = reg.order_id
+  actionMessage.value = ''
+  errorMessage.value = ''
+
+  try {
+    await adminMarkOrderPaid(reg.order_id)
+    actionMessage.value = '已確認收款。'
+    await loadRegistrations()
+  } catch (err) {
+    errorMessage.value = err instanceof Error ? err.message : '確認收款失敗'
+  } finally {
+    confirmingOrderId.value = null
+  }
+}
+
+onMounted(loadRegistrations)
 </script>
 
 <template>
-  <section class="mx-auto max-w-4xl">
-    <h1 class="text-xl font-bold text-gray-900">報名清單（唯讀）</h1>
+  <section class="mx-auto max-w-6xl">
+    <h1 class="text-xl font-bold text-gray-900">報名與付款管理</h1>
 
     <p v-if="loading" class="mt-4 text-sm text-gray-500">載入中...</p>
     <p v-if="errorMessage" class="mt-4 text-sm text-red-600">{{ errorMessage }}</p>
+    <p v-if="actionMessage" class="mt-4 text-sm text-green-700">{{ actionMessage }}</p>
 
     <div v-if="!loading && !errorMessage" class="mt-4 flex flex-wrap gap-3">
-      <select v-model="classFilter" class="rounded border border-gray-300 px-3 py-2 text-sm">
+      <select
+        v-model="classFilter"
+        class="rounded border border-gray-300 px-3 py-2 text-sm"
+      >
         <option value="">全部班級</option>
-        <option v-for="name in classOptions" :key="name" :value="name">{{ name }}</option>
+        <option v-for="name in classOptions" :key="name" :value="name">
+          {{ name }}
+        </option>
       </select>
+
       <input
         v-model="searchText"
         type="text"
-        placeholder="搜尋學生姓名或手機"
+        placeholder="搜尋姓名、手機或末五碼"
         class="rounded border border-gray-300 px-3 py-2 text-sm"
       />
     </div>
@@ -77,23 +133,81 @@ onMounted(async () => {
             <th class="py-2 pr-4">手機</th>
             <th class="py-2 pr-4">班級</th>
             <th class="py-2 pr-4">場地／期別</th>
-            <th class="py-2 pr-4">報名時間</th>
-            <th class="py-2 pr-4">狀態</th>
+            <th class="py-2 pr-4">金額</th>
+            <th class="py-2 pr-4">付款方式</th>
+            <th class="py-2 pr-4">末五碼</th>
+            <th class="py-2 pr-4">付款狀態</th>
+            <th class="py-2 pr-4">報名狀態</th>
+            <th class="py-2 pr-4">操作</th>
           </tr>
         </thead>
+
         <tbody class="divide-y divide-gray-100">
           <tr v-for="reg in filteredRegistrations" :key="reg.id">
-            <td class="py-2 pr-4">{{ reg.student_name ?? '（未填寫姓名）' }}</td>
-            <td class="py-2 pr-4">{{ reg.student_phone }}</td>
-            <td class="py-2 pr-4">{{ reg.class_name }}</td>
-            <td class="py-2 pr-4">{{ reg.venue_name }} ・ {{ reg.term_name }}</td>
-            <td class="py-2 pr-4">{{ new Date(reg.created_at).toLocaleString('zh-TW') }}</td>
-            <td class="py-2 pr-4">{{ STATUS_TEXT[reg.status] ?? reg.status }}</td>
+            <td class="py-3 pr-4">
+              {{ reg.student_name ?? '（未填寫姓名）' }}
+            </td>
+
+            <td class="py-3 pr-4">
+              {{ reg.student_phone }}
+            </td>
+
+            <td class="py-3 pr-4">
+              {{ reg.class_name }}
+            </td>
+
+            <td class="py-3 pr-4">
+              {{ reg.venue_name }} ・ {{ reg.term_name }}
+            </td>
+
+            <td class="py-3 pr-4 font-medium">
+              {{ formatCurrency(reg.total_amount) }}
+            </td>
+
+            <td class="py-3 pr-4">
+              {{ formatPaymentMethod(reg.payment_method) }}
+            </td>
+
+            <td class="py-3 pr-4 font-mono">
+              {{ reg.payment_reference ?? '—' }}
+            </td>
+
+            <td class="py-3 pr-4">
+              <span
+                class="font-medium"
+                :class="reg.payment_status === 'paid' ? 'text-green-700' : 'text-amber-600'"
+              >
+                {{ PAYMENT_STATUS_TEXT[reg.payment_status] ?? reg.payment_status }}
+              </span>
+            </td>
+
+            <td class="py-3 pr-4">
+              {{ STATUS_TEXT[reg.status] ?? reg.status }}
+            </td>
+
+            <td class="py-3 pr-4">
+              <button
+                v-if="reg.payment_status === 'pending'"
+                type="button"
+                class="rounded bg-green-700 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
+                :disabled="confirmingOrderId === reg.order_id"
+                @click="confirmPayment(reg)"
+              >
+                {{ confirmingOrderId === reg.order_id ? '處理中...' : '確認收款' }}
+              </button>
+
+              <span v-else class="text-xs text-green-700">
+                已確認
+              </span>
+            </td>
           </tr>
         </tbody>
       </table>
 
-      <p v-if="filteredRegistrations.length === 0" class="mt-4 text-sm text-gray-500">
+      <p
+        v-if="filteredRegistrations.length === 0"
+        class="mt-4 text-sm text-gray-500"
+      >
         沒有符合篩選條件的報名紀錄。
       </p>
     </div>

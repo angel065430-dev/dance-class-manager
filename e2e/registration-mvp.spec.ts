@@ -9,8 +9,8 @@ import { test, expect } from '@playwright/test'
  *   2. 執行過 `supabase/seed/registration_mvp_seed.sql`，且班級名稱維持腳本
  *      內建的預設值（爵士舞初階／KPOP 舞蹈／女子舞蹈），或依實際班級名稱
  *      調整下方 CLASS_A / CLASS_B 常數。
- *   3. `.env.local` 指向本機 Supabase（VITE_SUPABASE_URL=http://127.0.0.1:54321
- *      等），`npm run dev` 或 `npm run preview` 正在執行。
+ *   3. `.env.e2e` 指向本機 Supabase（VITE_SUPABASE_URL=http://127.0.0.1:18081
+ *      等），Playwright 會透過 Vite 的 e2e mode 自動載入此設定。
  *
  * 每次執行都用亂數手機號碼註冊全新學生帳號，避免重複執行時撞到
  * 「已報名過」或手機號碼重複註冊的錯誤。
@@ -49,11 +49,12 @@ test('student can register, browse, multi-select, and submit a full-term registr
   await page.getByRole('button', { name: /送出報名/ }).click()
 
   await expect(page.getByText('報名成功！')).toBeVisible()
-  await expect(page.getByText(CLASS_A)).toBeVisible()
-  await expect(page.getByText(CLASS_B)).toBeVisible()
+  await expect(page.locator('li').filter({ hasText: CLASS_A }).last()).toBeVisible()
+  await expect(page.locator('li').filter({ hasText: CLASS_B }).last()).toBeVisible()
 
   await page.getByRole('link', { name: '查看我的報名' }).click()
   await expect(page).toHaveURL(/\/my-registrations$/)
   await expect(page.getByText(CLASS_A)).toBeVisible()
   await expect(page.getByText(CLASS_B)).toBeVisible()
 })
+

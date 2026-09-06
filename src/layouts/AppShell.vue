@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 /**
  * AppShell — 全站共用版面。
  *
@@ -13,7 +13,7 @@
 import { RouterLink } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
-const appName = import.meta.env.VITE_APP_NAME ?? '舞蹈課程管理系統'
+const appName = import.meta.env.VITE_APP_NAME ?? 'Angel Zumba'
 const { isLoggedIn, isAdmin, user, logout } = useAuth()
 
 async function handleLogout() {
@@ -64,3 +64,4 @@ async function handleLogout() {
     </footer>
   </div>
 </template>
+
