@@ -1,13 +1,15 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import {
   adminMarkOrderPaid,
   fetchAllRegistrationsForAdmin,
 } from '@/services/registrations'
+import { fetchAdminClasses } from '@/services/adminClasses'
 
 type AdminRegistrationRow = Awaited<ReturnType<typeof fetchAllRegistrationsForAdmin>>[number]
 
 const registrations = ref<AdminRegistrationRow[]>([])
+const classes = ref<Awaited<ReturnType<typeof fetchAdminClasses>>>([])
 const loading = ref(true)
 const errorMessage = ref('')
 const classFilter = ref('')
@@ -25,10 +27,12 @@ const PAYMENT_STATUS_TEXT: Record<string, string> = {
   paid: '已付款',
 }
 
-const classOptions = computed(() => {
-  const names = new Set(registrations.value.map((r) => r.class_name))
-  return Array.from(names).sort()
-})
+const classOptions = computed(() =>
+  classes.value
+    .filter((c) => c.is_active)
+    .map((c) => c.name)
+    .sort(),
+)
 
 const filteredRegistrations = computed(() => {
   return registrations.value.filter((r) => {
@@ -65,7 +69,12 @@ async function loadRegistrations() {
   errorMessage.value = ''
 
   try {
-    registrations.value = await fetchAllRegistrationsForAdmin()
+    const [registrationRows, classRows] = await Promise.all([
+      fetchAllRegistrationsForAdmin(),
+      fetchAdminClasses(),
+    ])
+    registrations.value = registrationRows
+    classes.value = classRows
   } catch (err) {
     errorMessage.value = err instanceof Error ? err.message : '報名資料載入失敗'
   } finally {
