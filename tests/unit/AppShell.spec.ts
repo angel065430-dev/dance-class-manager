@@ -25,7 +25,7 @@ describe('AppShell', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('舞蹈課程管理系統')
+    expect(wrapper.text()).toContain('Angel Zumba')
     expect(wrapper.html()).toContain('hello')
   })
 })

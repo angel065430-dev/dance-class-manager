@@ -40,6 +40,10 @@ const router = createRouter({
       meta: { requiresStudent: true },
     },
     {
+      path: '/admin',
+      redirect: { name: 'admin-registrations' },
+    },
+    {
       path: '/admin/login',
       name: 'admin-login',
       component: () => import('@/pages/admin/AdminLoginView.vue'),
@@ -48,6 +52,12 @@ const router = createRouter({
       path: '/admin/registrations',
       name: 'admin-registrations',
       component: () => import('@/pages/admin/AdminRegistrationsView.vue'),
+      meta: { requiresAdmin: true },
+    },
+    {
+      path: '/admin/students',
+      name: 'admin-students',
+      component: () => import('@/pages/admin/AdminStudentsView.vue'),
       meta: { requiresAdmin: true },
     },
     {

@@ -5,6 +5,7 @@ import {
   fetchAllRegistrationsForAdmin,
 } from '@/services/registrations'
 import { fetchAdminClasses } from '@/services/adminClasses'
+import { groupRowsByOrder } from '@/utils/orderGroups'
 
 type AdminRegistrationRow = Awaited<ReturnType<typeof fetchAllRegistrationsForAdmin>>[number]
 
@@ -34,9 +35,11 @@ const classOptions = computed(() =>
     .sort(),
 )
 
+const orderGroups = computed(() => groupRowsByOrder(registrations.value))
+
 const filteredRegistrations = computed(() => {
-  return registrations.value.filter((r) => {
-    if (classFilter.value && r.class_name !== classFilter.value) return false
+  return orderGroups.value.filter((r) => {
+    if (classFilter.value && !r.class_names.includes(classFilter.value)) return false
 
     if (searchText.value) {
       const needle = searchText.value.trim()
@@ -152,7 +155,7 @@ onMounted(loadRegistrations)
         </thead>
 
         <tbody class="divide-y divide-gray-100">
-          <tr v-for="reg in filteredRegistrations" :key="reg.id">
+          <tr v-for="reg in filteredRegistrations" :key="reg.order_id">
             <td class="py-3 pr-4">
               {{ reg.student_name ?? '（未填寫姓名）' }}
             </td>
@@ -162,7 +165,7 @@ onMounted(loadRegistrations)
             </td>
 
             <td class="py-3 pr-4">
-              {{ reg.class_name }}
+              <ul class="list-inside list-disc"><li v-for="name in reg.class_names" :key="name">{{ name }}</li></ul>
             </td>
 
             <td class="py-3 pr-4">

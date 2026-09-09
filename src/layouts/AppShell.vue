@@ -42,6 +42,9 @@ async function handleLogout() {
             <RouterLink to="/admin/registrations" class="text-gray-700 hover:text-gray-900"
               >管理後台</RouterLink
             >
+            <RouterLink to="/admin/students" class="text-gray-700 hover:text-gray-900"
+              >學生帳號</RouterLink
+            >
             <button class="text-gray-700 hover:text-gray-900" @click="handleLogout">登出</button>
           </template>
 

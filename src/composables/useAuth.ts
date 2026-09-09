@@ -3,6 +3,7 @@ import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabaseClient'
 import { normalizeTaiwanPhone } from '@/utils/phone'
 import { validatePin } from '@/utils/pin'
+import { functionErrorMessage } from '@/utils/functionErrors'
 import type { UserRoleName } from '@/types/database'
 
 /**
@@ -67,36 +68,43 @@ export function useAuth() {
    * profiles/user_roles 由資料庫 Trigger（handle_new_auth_user）自動建立，
    * 前端完全不自行寫入這兩張表。
    */
-  async function signUpStudent(rawPhone: string, pin: string) {
+  async function signUpStudent(rawPhone: string, pin: string, invitationCode: string) {
     const phoneResult = normalizeTaiwanPhone(rawPhone)
     if (!phoneResult.ok) throw new Error(phoneResult.error)
 
     const pinResult = validatePin(pin)
     if (!pinResult.ok) throw new Error(pinResult.error)
 
-    const { data, error } = await supabase.auth.signUp({
-      phone: phoneResult.e164,
-      password: pin,
-    })
-    if (error) throw error
+    const { data: functionData, error: functionError } = await supabase.functions.invoke(
+      'create-student-account',
+      { body: { phone: phoneResult.e164, pin, invitation_code: invitationCode } },
+    )
+    if (functionError)
+      throw new Error(await functionErrorMessage(functionError, '帳號建立失敗，請稍後再試'))
+    if (!functionData?.success) throw new Error(functionData?.error ?? '帳號建立失敗')
 
-    session.value = data.session
-    if (data.session) {
-      roles.value = await loadRoles(data.session.user.id)
-    }
-    return data
+    // 帳號建立後沿用受控的無 SMS 登入端點取得 session。
+    // 未設定 SMS provider 時，GoTrue 會停用原生 phone/password login。
+    return loginStudent(rawPhone, pin)
   }
 
   async function loginStudent(rawPhone: string, pin: string) {
     const phoneResult = normalizeTaiwanPhone(rawPhone)
     if (!phoneResult.ok) throw new Error(phoneResult.error)
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      phone: phoneResult.e164,
-      password: pin,
+    const { data: login, error: loginError } = await supabase.functions.invoke('student-pin-login', {
+      body: { phone: phoneResult.e164, pin },
     })
-    if (error) throw error
+    if (loginError)
+      throw new Error(await functionErrorMessage(loginError, '登入失敗，請確認手機號碼與 PIN'))
+    if (!login?.success || !login.access_token || !login.refresh_token)
+      throw new Error(login?.error ?? '登入失敗，請確認手機號碼與 PIN')
 
+    const { data, error } = await supabase.auth.setSession({
+      access_token: login.access_token,
+      refresh_token: login.refresh_token,
+    })
+    if (error || !data.user) throw error ?? new Error('登入狀態建立失敗')
     session.value = data.session
     roles.value = await loadRoles(data.user.id)
     return data

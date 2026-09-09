@@ -7,5 +7,5 @@ import { test, expect } from '@playwright/test'
  */
 test('homepage renders the app title', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: '舞蹈課程管理系統' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Angel Zumba 課程' })).toBeVisible()
 })

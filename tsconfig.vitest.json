@@ -1,6 +1,12 @@
 {
   "extends": "./tsconfig.app.json",
-  "include": ["env.d.ts", "src/**/*", "src/**/*.vue", "tests/**/*"],
+  "include": [
+    "env.d.ts",
+    "src/**/*",
+    "src/**/*.vue",
+    "tests/**/*",
+    "supabase/functions/_shared/**/*.ts"
+  ],
   "exclude": [],
   "compilerOptions": {
     "composite": true,

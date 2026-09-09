@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import {
   fetchMyRegistrations,
   submitPaymentReference,
@@ -9,6 +9,7 @@ import {
   type VenuePaymentSettings,
 } from '@/services/paymentSettings'
 import type { RegistrationWithClass } from '@/types/database'
+import { groupRowsByOrder } from '@/utils/orderGroups'
 
 const registrations = ref<RegistrationWithClass[]>([])
 const paymentSettingsByVenue = ref<Record<string, VenuePaymentSettings | null>>({})
@@ -19,6 +20,8 @@ const paymentReferenceByOrder = ref<Record<string, string>>({})
 const submittingOrderId = ref<string | null>(null)
 const successMessageByOrder = ref<Record<string, string>>({})
 const paymentErrorByOrder = ref<Record<string, string>>({})
+
+const orderGroups = computed(() => groupRowsByOrder(registrations.value))
 
 const STATUS_TEXT: Record<string, string> = {
   active: '有效',
@@ -139,13 +142,16 @@ onMounted(loadData)
       <RouterLink to="/courses" class="underline">去瀏覽課程</RouterLink>
     </p>
 
-    <ul v-if="registrations.length > 0" class="mt-4 space-y-4">
+    <ul v-if="orderGroups.length > 0" class="mt-4 space-y-4">
       <li
-        v-for="reg in registrations"
-        :key="reg.id"
+        v-for="reg in orderGroups"
+        :key="reg.order_id"
         class="rounded border border-gray-200 bg-white p-4"
       >
-        <p class="font-medium text-gray-900">{{ reg.class_name }}</p>
+        <p class="text-xs font-medium text-gray-400">同一筆訂單包含</p>
+        <ul class="mt-1 list-inside list-disc font-medium text-gray-900">
+          <li v-for="className in reg.class_names" :key="className">{{ className }}</li>
+        </ul>
 
         <p class="text-sm text-gray-500">
           {{ reg.venue_name }} ・ {{ reg.term_name }}
