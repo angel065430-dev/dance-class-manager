@@ -52,7 +52,7 @@ export async function fetchMyRegistrations(): Promise<RegistrationWithClass[]> {
       `
       id, student_id, class_id, term_id, order_id, class_session_id,
       registration_type, status, created_at, cancelled_at, cancelled_reason,
-      classes ( name, venues ( id, name ), terms ( name ) ),
+      classes ( name, class_code, venues ( id, name ), terms ( name ) ),
       orders ( payment_status, payment_method, payment_reference, paid_at, total_amount )
     `,
     )
@@ -79,6 +79,7 @@ export async function fetchMyRegistrations(): Promise<RegistrationWithClass[]> {
       cancelled_at: row.cancelled_at,
       cancelled_reason: row.cancelled_reason,
       class_name: cls?.name ?? '',
+      class_code: cls?.class_code ?? null,
       venue_id: venue?.id ?? '',
       venue_name: venue?.name ?? '',
       term_name: term?.name ?? '',
@@ -104,7 +105,7 @@ export async function fetchAllRegistrationsForAdmin(): Promise<
       `
       id, student_id, class_id, term_id, order_id, class_session_id,
       registration_type, status, created_at, cancelled_at, cancelled_reason,
-      classes ( name, venues ( id, name ), terms ( name ) ),
+      classes ( name, class_code, venues ( id, name ), terms ( name ) ),
       orders ( payment_status, payment_method, payment_reference, paid_at, total_amount ),
       profiles ( name, phone, line_display_name )
     `,
@@ -133,6 +134,7 @@ export async function fetchAllRegistrationsForAdmin(): Promise<
       cancelled_at: row.cancelled_at,
       cancelled_reason: row.cancelled_reason,
       class_name: cls?.name ?? '',
+      class_code: cls?.class_code ?? null,
       venue_id: venue?.id ?? '',
       venue_name: venue?.name ?? '',
       term_name: term?.name ?? '',

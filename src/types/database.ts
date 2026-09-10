@@ -102,6 +102,7 @@ export interface Registration {
 /** 「我的報名」/ Admin 報名清單頁用：registration + class/venue 名稱。 */
 export interface RegistrationWithClass extends Registration {
   class_name: string
+  class_code: string | null
   venue_id: string
   venue_name: string
   term_name: string

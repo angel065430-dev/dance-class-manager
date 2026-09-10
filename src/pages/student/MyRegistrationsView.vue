@@ -213,7 +213,7 @@ onMounted(async () => {
             class="flex items-center justify-between gap-3"
           >
             <span :class="item.status === 'cancelled' ? 'text-gray-400 line-through' : ''">
-              • {{ item.class_name }}
+              • {{ item.class_code ? `${item.class_code}｜` : '' }}{{ item.class_name }}
               <span v-if="item.status === 'cancelled'" class="text-xs no-underline">（已取消）</span>
             </span>
 

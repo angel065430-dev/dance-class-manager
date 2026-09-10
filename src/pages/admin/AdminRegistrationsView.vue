@@ -199,7 +199,7 @@ onMounted(loadRegistrations)
                   class="flex min-w-[13rem] items-center justify-between gap-2"
                 >
                   <span :class="item.status === 'cancelled' ? 'text-gray-400 line-through' : ''">
-                    • {{ item.class_name }}
+                    • {{ item.class_code ? `${item.class_code}｜` : '' }}{{ item.class_name }}
                     <span v-if="item.status === 'cancelled'" class="text-xs">（已取消）</span>
                   </span>
                   <button

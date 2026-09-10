@@ -186,7 +186,7 @@ onMounted(loadClasses)
       >
         <div>
           <p class="font-medium text-gray-900">
-            {{ cls.name }}
+            {{ cls.class_code ? `${cls.class_code}｜` : '' }}{{ cls.name }}
           </p>
 
           <p class="text-sm text-gray-500">
