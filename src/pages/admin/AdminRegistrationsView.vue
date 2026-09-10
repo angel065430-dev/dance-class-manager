@@ -33,8 +33,12 @@ const PAYMENT_STATUS_TEXT: Record<string, string> = {
 const classOptions = computed(() =>
   classes.value
     .filter((c) => c.is_active)
-    .map((c) => c.name)
-    .sort(),
+    .map((c) => ({
+      id: c.id,
+      value: c.name,
+      label: c.class_code ? c.class_code + '｜' + c.name : c.name,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'zh-TW')),
 )
 
 const orderGroups = computed(() => groupRowsByOrder(registrations.value))
@@ -151,8 +155,8 @@ onMounted(loadRegistrations)
         class="rounded border border-gray-300 px-3 py-2 text-sm"
       >
         <option value="">全部班級</option>
-        <option v-for="name in classOptions" :key="name" :value="name">
-          {{ name }}
+        <option v-for="option in classOptions" :key="option.id" :value="option.value">
+          {{ option.label }}
         </option>
       </select>
 
