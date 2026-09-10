@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import {
+  adminCancelPendingRegistration,
   adminMarkOrderPaid,
   fetchAllRegistrationsForAdmin,
 } from '@/services/registrations'
@@ -9,6 +10,10 @@ import { studentDisplayName } from '@/utils/studentNames'
 import { groupRowsByOrder } from '@/utils/orderGroups'
 
 type AdminRegistrationRow = Awaited<ReturnType<typeof fetchAllRegistrationsForAdmin>>[number]
+type AdminOrderGroup = AdminRegistrationRow & {
+  class_names: string[]
+  registrations: AdminRegistrationRow[]
+}
 
 const registrations = ref<AdminRegistrationRow[]>([])
 const classes = ref<Awaited<ReturnType<typeof fetchAdminClasses>>>([])
@@ -17,12 +22,8 @@ const errorMessage = ref('')
 const classFilter = ref('')
 const searchText = ref('')
 const confirmingOrderId = ref<string | null>(null)
+const cancellingRegistrationId = ref<string | null>(null)
 const actionMessage = ref('')
-
-const STATUS_TEXT: Record<string, string> = {
-  active: '有效',
-  cancelled: '已取消',
-}
 
 const PAYMENT_STATUS_TEXT: Record<string, string> = {
   pending: '待付款',
@@ -53,6 +54,10 @@ const filteredRegistrations = computed(() => {
     return true
   })
 })
+
+function orderHasActive(reg: AdminOrderGroup) {
+  return reg.registrations.some((item) => item.status === 'active')
+}
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('zh-TW', {
@@ -108,6 +113,27 @@ async function confirmPayment(reg: AdminRegistrationRow) {
   }
 }
 
+async function cancelRegistration(reg: AdminRegistrationRow) {
+  const confirmed = window.confirm(
+    `確定要替 ${reg.student_name ?? reg.student_phone ?? '此學生'} 取消「${reg.class_name}」嗎？\n\n名額會立即釋出，訂單金額及多堂優惠會依剩餘課程重新計算。`,
+  )
+  if (!confirmed) return
+
+  cancellingRegistrationId.value = reg.id
+  actionMessage.value = ''
+  errorMessage.value = ''
+
+  try {
+    await adminCancelPendingRegistration(reg.id)
+    actionMessage.value = `已取消「${reg.class_name}」，名額與訂單金額已更新。`
+    await loadRegistrations()
+  } catch (err) {
+    errorMessage.value = err instanceof Error ? err.message : '取消報名失敗'
+  } finally {
+    cancellingRegistrationId.value = null
+  }
+}
+
 onMounted(loadRegistrations)
 </script>
 
@@ -157,35 +183,55 @@ onMounted(loadRegistrations)
 
         <tbody class="divide-y divide-gray-100">
           <tr v-for="reg in filteredRegistrations" :key="reg.order_id">
-            <td class="py-3 pr-4">
+            <td class="py-3 pr-4 align-top">
               {{ studentDisplayName(reg.student_name, reg.student_line_display_name) }}
             </td>
 
-            <td class="py-3 pr-4">
+            <td class="py-3 pr-4 align-top">
               {{ reg.student_phone }}
             </td>
 
-            <td class="py-3 pr-4">
-              <ul class="list-inside list-disc"><li v-for="name in reg.class_names" :key="name">{{ name }}</li></ul>
+            <td class="py-3 pr-4 align-top">
+              <ul class="space-y-2">
+                <li
+                  v-for="item in reg.registrations"
+                  :key="item.id"
+                  class="flex min-w-[13rem] items-center justify-between gap-2"
+                >
+                  <span :class="item.status === 'cancelled' ? 'text-gray-400 line-through' : ''">
+                    • {{ item.class_name }}
+                    <span v-if="item.status === 'cancelled'" class="text-xs">（已取消）</span>
+                  </span>
+                  <button
+                    v-if="item.status === 'active' && reg.payment_status === 'pending'"
+                    type="button"
+                    class="shrink-0 rounded border border-red-300 px-2 py-1 text-xs font-medium text-red-700 disabled:opacity-50"
+                    :disabled="cancellingRegistrationId === item.id"
+                    @click="cancelRegistration(item)"
+                  >
+                    {{ cancellingRegistrationId === item.id ? '取消中...' : '取消' }}
+                  </button>
+                </li>
+              </ul>
             </td>
 
-            <td class="py-3 pr-4">
+            <td class="py-3 pr-4 align-top">
               {{ reg.venue_name }} ・ {{ reg.term_name }}
             </td>
 
-            <td class="py-3 pr-4 font-medium">
+            <td class="py-3 pr-4 align-top font-medium">
               {{ formatCurrency(reg.total_amount) }}
             </td>
 
-            <td class="py-3 pr-4">
+            <td class="py-3 pr-4 align-top">
               {{ formatPaymentMethod(reg.payment_method) }}
             </td>
 
-            <td class="py-3 pr-4 font-mono">
+            <td class="py-3 pr-4 align-top font-mono">
               {{ reg.payment_reference ?? '—' }}
             </td>
 
-            <td class="py-3 pr-4">
+            <td class="py-3 pr-4 align-top">
               <span
                 class="font-medium"
                 :class="reg.payment_status === 'paid' ? 'text-green-700' : 'text-amber-600'"
@@ -194,13 +240,13 @@ onMounted(loadRegistrations)
               </span>
             </td>
 
-            <td class="py-3 pr-4">
-              {{ STATUS_TEXT[reg.status] ?? reg.status }}
+            <td class="py-3 pr-4 align-top">
+              {{ orderHasActive(reg) ? '有效' : '已取消' }}
             </td>
 
-            <td class="py-3 pr-4">
+            <td class="py-3 pr-4 align-top">
               <button
-                v-if="reg.payment_status === 'pending'"
+                v-if="reg.payment_status === 'pending' && orderHasActive(reg)"
                 type="button"
                 class="rounded bg-green-700 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
                 :disabled="confirmingOrderId === reg.order_id"
@@ -209,9 +255,10 @@ onMounted(loadRegistrations)
                 {{ confirmingOrderId === reg.order_id ? '處理中...' : '確認收款' }}
               </button>
 
-              <span v-else class="text-xs text-green-700">
+              <span v-else-if="reg.payment_status === 'paid'" class="text-xs text-green-700">
                 已確認
               </span>
+              <span v-else class="text-xs text-gray-500">無需付款</span>
             </td>
           </tr>
         </tbody>

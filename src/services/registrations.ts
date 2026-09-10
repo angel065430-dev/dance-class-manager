@@ -160,3 +160,27 @@ export async function adminMarkOrderPaid(orderId: string): Promise<void> {
 
   if (error) throw error
 }
+
+/**
+ * 學生取消尚未付款、且尚未提交付款資訊的單堂期課報名。
+ * 後端會在同一交易內釋放名額並重新計算該訂單的金額與多堂優惠。
+ */
+export async function cancelMyPendingRegistration(registrationId: string): Promise<void> {
+  const { error } = await supabase.rpc('rpc_cancel_my_pending_registration', {
+    p_registration_id: registrationId,
+  })
+
+  if (error) throw error
+}
+
+/**
+ * Admin 代學生取消尚未確認收款的單堂期課報名。
+ * 權限、付款狀態、名額釋放與訂單重算均由後端 RPC 強制處理。
+ */
+export async function adminCancelPendingRegistration(registrationId: string): Promise<void> {
+  const { error } = await supabase.rpc('rpc_admin_cancel_pending_registration', {
+    p_registration_id: registrationId,
+  })
+
+  if (error) throw error
+}

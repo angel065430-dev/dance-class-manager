@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 /**
  * 公開課程瀏覽 + 多選期課報名頁（Registration MVP 核心路徑）。
  *
@@ -8,6 +8,7 @@
  * 新產生的 idempotency key）。
  */
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { fetchOpenClasses } from '@/services/classes'
 import {
@@ -24,6 +25,7 @@ import type {
 } from '@/types/database'
 
 const { isLoggedIn, isAdmin } = useAuth()
+const router = useRouter()
 
 const classes = ref<ClassWithAvailability[]>([])
 const sessionsByClass = ref<Record<string, PublicClassSession[]>>({})
@@ -133,7 +135,10 @@ async function handleSubmit() {
 
     if (result.value.success) {
       selected.value = new Set()
-      await loadClasses()
+      await router.push({
+        name: 'my-registrations',
+        query: { registered: '1' },
+      })
     }
   } catch (err) {
     result.value = {

@@ -9,6 +9,7 @@ describe('groupRowsByOrder', () => {
     ])
     expect(result).toHaveLength(1)
     expect(result[0].class_names).toEqual(['週一班', '週五班'])
+    expect(result[0].registrations.map((row) => row.id)).toEqual(['r1', 'r2'])
     expect(result[0].total_amount).toBe(1800)
   })
 
