@@ -2,6 +2,10 @@ import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AdminStudentsView from '@/pages/admin/AdminStudentsView.vue'
 
+const listMock = vi.fn()
+vi.mock('@/services/adminStudentProfiles', () => ({
+  fetchAdminStudentProfiles: (...args: unknown[]) => listMock(...args),
+}))
 const resetMock = vi.fn()
 const inviteMock = vi.fn()
 vi.mock('@/services/studentAccounts', () => ({
@@ -10,7 +14,22 @@ vi.mock('@/services/studentAccounts', () => ({
 }))
 
 describe('AdminStudentsView', () => {
-  beforeEach(() => { resetMock.mockReset(); inviteMock.mockReset(); vi.spyOn(window, 'confirm').mockReturnValue(true) })
+  beforeEach(() => { listMock.mockReset(); listMock.mockResolvedValue([]); resetMock.mockReset(); inviteMock.mockReset(); vi.spyOn(window, 'confirm').mockReturnValue(true) })
+
+  it('searches students by LINE name and displays the stable ID', async () => {
+    listMock.mockResolvedValue([
+      { id: 'student-1', name: '陳小美', line_display_name: 'May', phone: '+886912345678', created_at: '2026-09-10T00:00:00Z' },
+      { id: 'student-2', name: '王大明', line_display_name: null, phone: '+886987654321', created_at: '2026-09-10T00:00:00Z' },
+    ])
+    const wrapper = mount(AdminStudentsView)
+    await vi.waitFor(() => expect(wrapper.text()).toContain('陳小美（May）'))
+    await wrapper.get('input[type="search"]').setValue('May')
+    expect(wrapper.text()).not.toContain('王大明')
+    const studentButton = wrapper.findAll('button').find(b => b.text().includes('陳小美'))
+    expect(studentButton).toBeDefined()
+    await studentButton!.trigger('click')
+    expect(wrapper.text()).toContain('student-1')
+  })
 
   it('creates and displays a phone-bound invitation once', async () => {
     inviteMock.mockResolvedValue({ code: 'ABCD2345EFGH', expiresAt: '2026-09-12T00:00:00.000Z' })

@@ -7,11 +7,14 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { normalizeStudentName, normalizeLineDisplayName } from '@/utils/studentNames'
 import { validatePin } from '@/utils/pin'
 
 const router = useRouter()
 const { signUpStudent } = useAuth()
 
+const name = ref('')
+const lineDisplayName = ref('')
 const phone = ref('')
 const invitationCode = ref('')
 const pin = ref('')
@@ -21,6 +24,16 @@ const errorMessage = ref('')
 
 async function handleSubmit() {
   errorMessage.value = ''
+
+  let legalName: string
+  let lineName: string | null
+  try {
+    legalName = normalizeStudentName(name.value)
+    lineName = normalizeLineDisplayName(lineDisplayName.value)
+  } catch (err) {
+    errorMessage.value = err instanceof Error ? err.message : '姓名格式不正確'
+    return
+  }
 
   if (pin.value !== pinConfirm.value) {
     errorMessage.value = '兩次輸入的 PIN 不一致'
@@ -35,7 +48,7 @@ async function handleSubmit() {
 
   submitting.value = true
   try {
-    await signUpStudent(phone.value, pin.value, invitationCode.value)
+    await signUpStudent(phone.value, pin.value, invitationCode.value, legalName, lineName)
     router.push('/courses')
   } catch (err) {
     errorMessage.value = err instanceof Error ? err.message : '註冊失敗，請稍後再試'
@@ -51,6 +64,15 @@ async function handleSubmit() {
     <p class="mt-1 text-sm text-gray-600">請使用老師提供、與手機號碼綁定的邀請碼建立帳號；系統不會發送簡訊。</p>
 
     <form class="mt-6 space-y-4" @submit.prevent="handleSubmit">
+      <div>
+        <label for="legal-name" class="block text-sm font-medium text-gray-700">中文本名（必填）</label>
+        <input id="legal-name" v-model="name" type="text" autocomplete="name" maxlength="80" required class="mt-1 block w-full rounded border border-gray-300 px-3 py-2" />
+      </div>
+      <div>
+        <label for="line-display-name" class="block text-sm font-medium text-gray-700">LINE 顯示名字（選填）</label>
+        <input id="line-display-name" v-model="lineDisplayName" type="text" maxlength="100" class="mt-1 block w-full rounded border border-gray-300 px-3 py-2" />
+        <p class="mt-1 text-xs text-gray-500">請填寫你在 LINE 上使用的名字，方便老師辨識，不需連結 LINE 帳號。</p>
+      </div>
       <div>
         <label for="phone" class="block text-sm font-medium text-gray-700">手機號碼</label>
         <input

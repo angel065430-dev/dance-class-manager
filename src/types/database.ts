@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 手寫的資料庫型別（Registration MVP 範圍）。
  *
  * 正式的 `supabase gen types typescript` 需要連上真正的 Supabase 專案才能
@@ -14,6 +14,7 @@ export interface Profile {
   id: string
   phone: string | null
   name: string | null
+  line_display_name: string | null
   line_id: string | null
   remit_last5: string | null
   created_at: string

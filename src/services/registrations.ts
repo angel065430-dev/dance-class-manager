@@ -1,4 +1,4 @@
-﻿import { supabase } from '@/lib/supabaseClient'
+import { supabase } from '@/lib/supabaseClient'
 import type { RegistrationWithClass, SubmitRegistrationsResult } from '@/types/database'
 
 /** 供前端產生一次性的 idempotency key（REGISTRATION_MVP_PLAN.md 第 C 節）。 */
@@ -96,7 +96,7 @@ export async function fetchMyRegistrations(): Promise<RegistrationWithClass[]> {
  * 這裡額外 join profiles 取得學生姓名/手機供後台顯示。
  */
 export async function fetchAllRegistrationsForAdmin(): Promise<
-  Array<RegistrationWithClass & { student_name: string | null; student_phone: string | null }>
+  Array<RegistrationWithClass & { student_name: string | null; student_phone: string | null; student_line_display_name: string | null }>
 > {
   const { data, error } = await supabase
     .from('registrations')
@@ -106,7 +106,7 @@ export async function fetchAllRegistrationsForAdmin(): Promise<
       registration_type, status, created_at, cancelled_at, cancelled_reason,
       classes ( name, venues ( id, name ), terms ( name ) ),
       orders ( payment_status, payment_method, payment_reference, paid_at, total_amount ),
-      profiles ( name, phone )
+      profiles ( name, phone, line_display_name )
     `,
     )
     .order('created_at', { ascending: false })
@@ -143,6 +143,7 @@ export async function fetchAllRegistrationsForAdmin(): Promise<
       paid_at: order?.paid_at ?? null,
       student_name: profile?.name ?? null,
       student_phone: profile?.phone ?? null,
+      student_line_display_name: profile?.line_display_name ?? null,
     }
   })
 }

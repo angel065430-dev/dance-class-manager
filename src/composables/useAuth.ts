@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabaseClient'
+import { normalizeStudentName, normalizeLineDisplayName } from '@/utils/studentNames'
 import { normalizeTaiwanPhone } from '@/utils/phone'
 import { validatePin } from '@/utils/pin'
 import { functionErrorMessage } from '@/utils/functionErrors'
@@ -68,7 +69,9 @@ export function useAuth() {
    * profiles/user_roles 由資料庫 Trigger（handle_new_auth_user）自動建立，
    * 前端完全不自行寫入這兩張表。
    */
-  async function signUpStudent(rawPhone: string, pin: string, invitationCode: string) {
+  async function signUpStudent(rawPhone: string, pin: string, invitationCode: string, rawName: string, rawLineName: string | null = null) {
+    const name = normalizeStudentName(rawName)
+    const lineDisplayName = normalizeLineDisplayName(rawLineName)
     const phoneResult = normalizeTaiwanPhone(rawPhone)
     if (!phoneResult.ok) throw new Error(phoneResult.error)
 
@@ -77,7 +80,7 @@ export function useAuth() {
 
     const { data: functionData, error: functionError } = await supabase.functions.invoke(
       'create-student-account',
-      { body: { phone: phoneResult.e164, pin, invitation_code: invitationCode } },
+      { body: { phone: phoneResult.e164, pin, invitation_code: invitationCode, name, line_display_name: lineDisplayName } },
     )
     if (functionError)
       throw new Error(await functionErrorMessage(functionError, '帳號建立失敗，請稍後再試'))

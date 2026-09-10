@@ -1,6 +1,26 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { studentDisplayName } from '@/utils/studentNames'
+import { fetchAdminStudentProfiles, type AdminStudentProfile } from '@/services/adminStudentProfiles'
 import { adminCreateStudentInvitation, adminResetStudentPin } from '@/services/studentAccounts'
+
+const students = ref<AdminStudentProfile[]>([])
+const studentSearch = ref('')
+const studentLoading = ref(false)
+const studentError = ref('')
+const selectedStudent = ref<AdminStudentProfile | null>(null)
+const filteredStudents = computed(() => {
+  const q = studentSearch.value.trim().toLowerCase()
+  return students.value.filter(s => `${s.name ?? ''} ${s.line_display_name ?? ''} ${s.phone ?? ''}`.toLowerCase().includes(q))
+})
+async function loadStudents() {
+  studentLoading.value = true
+  studentError.value = ''
+  try { students.value = await fetchAdminStudentProfiles() }
+  catch (err) { studentError.value = err instanceof Error ? err.message : '學生資料載入失敗' }
+  finally { studentLoading.value = false }
+}
+onMounted(loadStudents)
 
 const phone = ref(''); const reason = ref(''); const submitting = ref(false)
 const errorMessage = ref(''); const oneTimePin = ref('')
@@ -33,7 +53,7 @@ async function createInvitation() {
 </script>
 
 <template>
-  <section class="mx-auto max-w-xl">
+  <section class="mx-auto max-w-4xl">
     <h1 class="text-xl font-bold text-gray-900">學生帳號協助</h1>
     <p class="mt-2 text-sm text-gray-600">學生第一次建立帳號前，請先核對本人身分並產生與其手機綁定的邀請碼。</p>
     <form class="mt-6 space-y-4 rounded border border-gray-200 bg-white p-5" @submit.prevent="createInvitation">
@@ -61,6 +81,26 @@ async function createInvitation() {
       <p class="font-semibold text-gray-900">一次性新 PIN</p><p class="mt-2 font-mono text-3xl tracking-widest text-gray-900">{{ oneTimePin }}</p>
       <p class="mt-2 text-sm text-amber-800">請立即私下告知學生。離開或重新整理此頁後無法再次查詢。</p>
       <button type="button" class="mt-3 text-sm underline" @click="oneTimePin = ''">我已記下，立即清除</button>
+    </div>
+    <div class="mt-8 rounded border border-gray-200 bg-white p-5">
+      <h2 class="font-semibold">學生名單</h2>
+      <input v-model="studentSearch" type="search" placeholder="搜尋中文本名、LINE 顯示名字或手機" class="mt-3 w-full rounded border px-3 py-2" />
+      <p v-if="studentLoading" class="mt-2 text-sm">載入中...</p>
+      <p v-if="studentError" class="mt-2 text-sm text-red-600">{{ studentError }}</p>
+      <div class="mt-3 max-h-80 overflow-y-auto">
+        <button v-for="student in filteredStudents" :key="student.id" type="button" class="block w-full border-b py-3 text-left text-sm" @click="selectedStudent = student">
+          <span class="font-medium">{{ studentDisplayName(student.name, student.line_display_name) }}</span>
+          <span class="ml-2 text-gray-500">{{ student.phone ?? '—' }}</span>
+        </button>
+      </div>
+      <div v-if="selectedStudent" class="mt-5 space-y-2 border-t pt-4 text-sm">
+        <h3 class="font-medium">學生詳細資料</h3>
+        <p>中文本名：{{ selectedStudent.name ?? '—' }}</p>
+        <p>LINE 顯示名字：{{ selectedStudent.line_display_name ?? '—' }}</p>
+        <p>手機：{{ selectedStudent.phone ?? '—' }}</p>
+        <p class="break-all text-xs text-gray-500">學生 ID：{{ selectedStudent.id }}</p>
+        <p class="text-xs text-gray-500">建立時間：{{ new Date(selectedStudent.created_at).toLocaleString('zh-TW') }}</p>
+      </div>
     </div>
   </section>
 </template>

@@ -5,6 +5,7 @@ import {
   fetchAllRegistrationsForAdmin,
 } from '@/services/registrations'
 import { fetchAdminClasses } from '@/services/adminClasses'
+import { studentDisplayName } from '@/utils/studentNames'
 import { groupRowsByOrder } from '@/utils/orderGroups'
 
 type AdminRegistrationRow = Awaited<ReturnType<typeof fetchAllRegistrationsForAdmin>>[number]
@@ -44,7 +45,7 @@ const filteredRegistrations = computed(() => {
     if (searchText.value) {
       const needle = searchText.value.trim()
       const haystack =
-        `${r.student_name ?? ''} ${r.student_phone ?? ''} ${r.payment_reference ?? ''}`
+        `${r.student_name ?? ''} ${r.student_line_display_name ?? ''} ${r.student_phone ?? ''} ${r.payment_reference ?? ''}`
 
       if (!haystack.includes(needle)) return false
     }
@@ -132,7 +133,7 @@ onMounted(loadRegistrations)
       <input
         v-model="searchText"
         type="text"
-        placeholder="搜尋姓名、手機或末五碼"
+        placeholder="搜尋中文本名、LINE 顯示名字、手機或末五碼"
         class="rounded border border-gray-300 px-3 py-2 text-sm"
       />
     </div>
@@ -157,7 +158,7 @@ onMounted(loadRegistrations)
         <tbody class="divide-y divide-gray-100">
           <tr v-for="reg in filteredRegistrations" :key="reg.order_id">
             <td class="py-3 pr-4">
-              {{ reg.student_name ?? '（未填寫姓名）' }}
+              {{ studentDisplayName(reg.student_name, reg.student_line_display_name) }}
             </td>
 
             <td class="py-3 pr-4">
