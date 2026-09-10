@@ -35,7 +35,7 @@ const classOptions = computed(() =>
     .filter((c) => c.is_active)
     .map((c) => ({
       id: c.id,
-      value: c.name,
+      value: c.id,
       label: c.class_code ? c.class_code + '｜' + c.name : c.name,
     }))
     .sort((a, b) => a.label.localeCompare(b.label, 'zh-TW')),
@@ -45,7 +45,7 @@ const orderGroups = computed(() => groupRowsByOrder(registrations.value))
 
 const filteredRegistrations = computed(() => {
   return orderGroups.value.filter((r) => {
-    if (classFilter.value && !r.class_names.includes(classFilter.value)) return false
+    if (classFilter.value && !r.registrations.some((item) => item.class_id === classFilter.value)) return false
 
     if (searchText.value) {
       const needle = searchText.value.trim()
