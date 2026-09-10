@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
 describe('student name integration contract', () => {
-  it('validates names before consuming an invitation or creating an Auth user', () => {
+  it('validates names before throttling or creating an Auth user', () => {
     const source = readFileSync('supabase/functions/create-student-account/index.ts', 'utf8')
     expect(source.indexOf('normalizeStudentName(body.name)')).toBeGreaterThan(-1)
     expect(source.indexOf('normalizeStudentName(body.name)')).toBeLessThan(source.indexOf("consume_student_signup_attempt"))
-    expect(source.indexOf('normalizeStudentName(body.name)')).toBeLessThan(source.indexOf('claim_student_invitation'))
+    expect(source).not.toContain('claim_student_invitation')
+    expect(source).not.toContain('invitation_code')
     expect(source).toContain('line_display_name: lineDisplayName')
     expect(source).toContain('updatedProfiles?.length !== 1')
   })

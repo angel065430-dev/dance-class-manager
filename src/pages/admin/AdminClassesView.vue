@@ -9,6 +9,7 @@ import {
   updateAdminClass,
 } from '@/services/adminClasses'
 import type { DanceClass, Term, Venue } from '@/types/database'
+import { fetchRegistrationSettings, updateRegistrationSettings } from '@/services/registrationSettings'
 
 const venues = ref<Venue[]>([])
 const terms = ref<Term[]>([])
@@ -17,6 +18,12 @@ const loading = ref(true)
 const errorMessage = ref('')
 const saving = ref(false)
 const saveErrorMessage = ref('')
+const discountEnabled = ref(true)
+const discountMinClasses = ref(2)
+const discountPercent = ref(96)
+const discountSaving = ref(false)
+const discountMessage = ref('')
+const discountError = ref('')
 
 const showCreateForm = ref(false)
 
@@ -33,6 +40,7 @@ const editClass = ref({
   venue_id: '',
   term_id: '',
   name: '',
+  class_code: '',
   weekday: 1,
   start_time: '20:30',
   end_time: '21:20',
@@ -46,6 +54,7 @@ const newClass = ref({
   venue_id: '',
   term_id: '',
   name: '',
+  class_code: '',
   weekday: 1,
   start_time: '20:30',
   end_time: '21:20',
@@ -107,6 +116,7 @@ function openEditForm(danceClass: DanceClass) {
     venue_id: danceClass.venue_id,
     term_id: danceClass.term_id,
     name: danceClass.name,
+    class_code: danceClass.class_code ?? '',
     weekday: danceClass.weekdays[0] ?? 1,
     start_time: formatTime(danceClass.start_time),
     end_time: formatTime(danceClass.end_time),
@@ -154,6 +164,7 @@ async function saveNewClass() {
       venue_id: newClass.value.venue_id,
       term_id: newClass.value.term_id,
       name: newClass.value.name,
+      class_code: newClass.value.class_code || null,
       weekdays: [newClass.value.weekday],
       start_time: newClass.value.start_time,
       end_time: newClass.value.end_time,
@@ -207,6 +218,7 @@ async function saveEditedClass() {
       venue_id: editClass.value.venue_id,
       term_id: editClass.value.term_id,
       name: editClass.value.name,
+      class_code: editClass.value.class_code || null,
       weekdays: [editClass.value.weekday],
       start_time: editClass.value.start_time,
       end_time: editClass.value.end_time,
@@ -232,17 +244,46 @@ async function saveEditedClass() {
   }
 }
 
+async function saveDiscountSettings() {
+  discountMessage.value = ''
+  discountError.value = ''
+  if (discountMinClasses.value < 2 || discountPercent.value <= 0 || discountPercent.value > 100) {
+    discountError.value = '最低堂數至少 2 堂，折扣百分比需大於 0 且不超過 100。'
+    return
+  }
+  discountSaving.value = true
+  try {
+    const saved = await updateRegistrationSettings({
+      enabled: discountEnabled.value,
+      min_full_term_classes: discountMinClasses.value,
+      full_term_discount_percent: discountPercent.value,
+    })
+    discountEnabled.value = saved.enabled
+    discountMinClasses.value = saved.min_full_term_classes
+    discountPercent.value = saved.full_term_discount_percent
+    discountMessage.value = '多堂期課優惠設定已儲存。'
+  } catch (err) {
+    discountError.value = err instanceof Error ? err.message : '優惠設定儲存失敗'
+  } finally {
+    discountSaving.value = false
+  }
+}
+
 onMounted(async () => {
   try {
-    const [venueRows, termRows, classRows] = await Promise.all([
+    const [venueRows, termRows, classRows, discountSettings] = await Promise.all([
       fetchAdminVenues(),
       fetchAdminTerms(),
       fetchAdminClasses(),
+      fetchRegistrationSettings(),
     ])
 
     venues.value = venueRows
     terms.value = termRows
     classes.value = classRows
+    discountEnabled.value = discountSettings.enabled
+    discountMinClasses.value = discountSettings.min_full_term_classes
+    discountPercent.value = discountSettings.full_term_discount_percent
   } catch (err) {
     errorMessage.value = err instanceof Error ? err.message : '期課資料載入失敗'
   } finally {
@@ -267,6 +308,30 @@ onMounted(async () => {
         @click="openCreateForm"
       >
         ＋ 新增期課
+      </button>
+    </div>
+
+    <div class="mt-6 rounded-lg border border-gray-200 bg-white p-5">
+      <h2 class="font-bold text-gray-900">多堂期課優惠</h2>
+      <p class="mt-1 text-sm text-gray-500">同一期、同一次報名達最低堂數時，由後端自動套用折扣。</p>
+      <div class="mt-4 grid gap-4 md:grid-cols-3">
+        <label class="flex items-center gap-2 text-sm">
+          <input v-model="discountEnabled" type="checkbox" />
+          <span>啟用優惠</span>
+        </label>
+        <label class="text-sm">
+          <span class="mb-1 block text-gray-600">最低期課堂數</span>
+          <input v-model.number="discountMinClasses" type="number" min="2" class="w-full rounded border border-gray-300 px-3 py-2" />
+        </label>
+        <label class="text-sm">
+          <span class="mb-1 block text-gray-600">折扣百分比（96 = 96 折）</span>
+          <input v-model.number="discountPercent" type="number" min="1" max="100" step="0.01" class="w-full rounded border border-gray-300 px-3 py-2" />
+        </label>
+      </div>
+      <p v-if="discountMessage" class="mt-3 text-sm text-green-700">{{ discountMessage }}</p>
+      <p v-if="discountError" class="mt-3 text-sm text-red-600">{{ discountError }}</p>
+      <button type="button" :disabled="discountSaving" class="mt-4 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50" @click="saveDiscountSettings">
+        {{ discountSaving ? '儲存中...' : '儲存優惠設定' }}
       </button>
     </div>
 
@@ -329,6 +394,11 @@ onMounted(async () => {
             placeholder="例如：週一 Zumba®"
             class="w-full rounded border border-gray-300 px-3 py-2"
           />
+        </label>
+
+        <label class="text-sm">
+          <span class="mb-1 block text-gray-600">課程代號</span>
+          <input v-model="newClass.class_code" type="text" placeholder="例如：F120" class="w-full rounded border border-gray-300 px-3 py-2 uppercase" />
         </label>
 
         <label class="text-sm">
@@ -474,6 +544,11 @@ onMounted(async () => {
         </label>
 
         <label class="text-sm">
+          <span class="mb-1 block text-gray-600">課程代號</span>
+          <input v-model="editClass.class_code" type="text" placeholder="例如：F120" class="w-full rounded border border-gray-300 px-3 py-2 uppercase" />
+        </label>
+
+        <label class="text-sm">
           <span class="mb-1 block text-gray-600">星期</span>
           <select
             v-model.number="editClass.weekday"
@@ -589,7 +664,7 @@ onMounted(async () => {
         <tbody class="divide-y divide-gray-100">
           <tr v-for="danceClass in classes" :key="danceClass.id">
             <td class="py-3 pr-4 font-medium text-gray-900">
-              {{ danceClass.name }}
+              {{ danceClass.class_code ? `${danceClass.class_code}｜` : '' }}{{ danceClass.name }}
             </td>
 
             <td class="py-3 pr-4">

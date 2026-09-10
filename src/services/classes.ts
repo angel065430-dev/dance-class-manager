@@ -13,7 +13,7 @@ export async function fetchOpenClasses(): Promise<ClassWithAvailability[]> {
     .from('classes')
     .select(
       `
-      id, venue_id, term_id, name, weekdays, start_time, end_time, capacity,
+      id, venue_id, term_id, name, class_code, weekdays, start_time, end_time, capacity,
       business_mode, full_term_price, single_session_price,
       default_base_makeup_capacity, is_open_for_registration, is_active,
       venues ( name ),
@@ -46,6 +46,7 @@ export async function fetchOpenClasses(): Promise<ClassWithAvailability[]> {
         venue_id: row.venue_id,
         term_id: row.term_id,
         name: row.name,
+        class_code: row.class_code,
         weekdays: row.weekdays,
         start_time: row.start_time,
         end_time: row.end_time,

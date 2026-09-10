@@ -4,6 +4,7 @@ export interface CreateAdminClassInput {
   venue_id: string
   term_id: string
   name: string
+  class_code?: string | null
   weekdays: number[]
   start_time: string
   end_time: string
@@ -22,6 +23,7 @@ export interface UpdateAdminClassInput {
   venue_id: string
   term_id: string
   name: string
+  class_code?: string | null
   weekdays: number[]
   start_time: string
   end_time: string
@@ -62,6 +64,7 @@ export async function fetchAdminClasses(): Promise<DanceClass[]> {
       venue_id,
       term_id,
       name,
+      class_code,
       weekdays,
       start_time,
       end_time,
@@ -87,6 +90,7 @@ export async function createAdminClass(input: CreateAdminClassInput): Promise<Da
       venue_id: input.venue_id,
       term_id: input.term_id,
       name: input.name.trim(),
+      class_code: input.class_code?.trim() || null,
       weekdays: input.weekdays,
       start_time: input.start_time,
       end_time: input.end_time,
@@ -103,6 +107,7 @@ export async function createAdminClass(input: CreateAdminClassInput): Promise<Da
       venue_id,
       term_id,
       name,
+      class_code,
       weekdays,
       start_time,
       end_time,
@@ -133,6 +138,7 @@ export async function updateAdminClass(
       venue_id: input.venue_id,
       term_id: input.term_id,
       name: input.name.trim(),
+      class_code: input.class_code?.trim() || null,
       weekdays: input.weekdays,
       start_time: input.start_time,
       end_time: input.end_time,
@@ -150,6 +156,7 @@ export async function updateAdminClass(
       venue_id,
       term_id,
       name,
+      class_code,
       weekdays,
       start_time,
       end_time,

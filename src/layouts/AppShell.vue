@@ -45,6 +45,9 @@ async function handleLogout() {
             <RouterLink to="/admin/students" class="text-gray-700 hover:text-gray-900"
               >學生帳號</RouterLink
             >
+            <RouterLink to="/admin/classes" class="text-gray-700 hover:text-gray-900">期課</RouterLink>
+            <RouterLink to="/admin/terms" class="text-gray-700 hover:text-gray-900">期別</RouterLink>
+            <RouterLink to="/admin/venues" class="text-gray-700 hover:text-gray-900">場地</RouterLink>
             <button class="text-gray-700 hover:text-gray-900" @click="handleLogout">登出</button>
           </template>
 

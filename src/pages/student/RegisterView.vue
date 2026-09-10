@@ -16,7 +16,6 @@ const { signUpStudent } = useAuth()
 const name = ref('')
 const lineDisplayName = ref('')
 const phone = ref('')
-const invitationCode = ref('')
 const pin = ref('')
 const pinConfirm = ref('')
 const submitting = ref(false)
@@ -48,7 +47,7 @@ async function handleSubmit() {
 
   submitting.value = true
   try {
-    await signUpStudent(phone.value, pin.value, invitationCode.value, legalName, lineName)
+    await signUpStudent(phone.value, pin.value, legalName, lineName)
     router.push('/courses')
   } catch (err) {
     errorMessage.value = err instanceof Error ? err.message : '註冊失敗，請稍後再試'
@@ -61,7 +60,7 @@ async function handleSubmit() {
 <template>
   <section class="mx-auto max-w-sm">
     <h1 class="text-xl font-bold text-gray-900">學生註冊</h1>
-    <p class="mt-1 text-sm text-gray-600">請使用老師提供、與手機號碼綁定的邀請碼建立帳號；系統不會發送簡訊。</p>
+    <p class="mt-1 text-sm text-gray-600">請使用中文本名、手機號碼與 6 位數 PIN 建立帳號；系統不會發送簡訊。</p>
 
     <form class="mt-6 space-y-4" @submit.prevent="handleSubmit">
       <div>
@@ -83,19 +82,6 @@ async function handleSubmit() {
           placeholder="0912345678"
           required
           class="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
-        />
-      </div>
-
-      <div>
-        <label for="invitation-code" class="block text-sm font-medium text-gray-700">安全邀請碼</label>
-        <input
-          id="invitation-code"
-          v-model="invitationCode"
-          type="text"
-          autocomplete="one-time-code"
-          maxlength="14"
-          required
-          class="mt-1 block w-full rounded border border-gray-300 px-3 py-2 uppercase"
         />
       </div>
 

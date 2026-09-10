@@ -52,6 +52,7 @@ export interface DanceClass {
   venue_id: string
   term_id: string
   name: string
+  class_code: string | null
   weekdays: number[]
   start_time: string
   end_time: string
