@@ -111,7 +111,15 @@ function cancelledSessions(classId: string) {
   )
 }
 
+function canRegisterFullTerm(cls: ClassWithAvailability) {
+  return cls.is_open_for_registration && cls.remaining_seats !== 0
+}
+
 function toggleSelect(classId: string) {
+  const cls = classes.value.find((item) => item.id === classId)
+
+  if (!cls || !canRegisterFullTerm(cls)) return
+
   if (selected.value.has(classId)) {
     selected.value.delete(classId)
   } else {
@@ -160,7 +168,7 @@ onMounted(loadClasses)
 
 <template>
   <section class="mx-auto max-w-2xl">
-    <h1 class="text-xl font-bold text-gray-900">目前開放報名的期課</h1>
+    <h1 class="text-xl font-bold text-gray-900">課程資訊與報名</h1>
 
     <p v-if="!isLoggedIn" class="mt-2 text-sm text-gray-600">
       <RouterLink to="/login" class="underline">登入</RouterLink>
@@ -201,6 +209,20 @@ onMounted(loadClasses)
           <p class="mt-1 text-sm font-medium text-gray-800">
             上課共 {{ scheduledSessions(cls.id).length }} 堂 ・
             整期 NT$ {{ cls.full_term_price }}
+          </p>
+
+          <p
+            v-if="!cls.is_open_for_registration"
+            class="mt-2 inline-block rounded bg-gray-100 px-2 py-1 text-sm font-medium text-gray-600"
+          >
+            期課報名已截止
+          </p>
+
+          <p
+            v-else-if="cls.remaining_seats === 0"
+            class="mt-2 inline-block rounded bg-red-50 px-2 py-1 text-sm font-medium text-red-700"
+          >
+            已額滿
           </p>
 
           <p
@@ -253,7 +275,7 @@ onMounted(loadClasses)
           <input
             type="checkbox"
             :checked="selected.has(cls.id)"
-            :disabled="cls.remaining_seats === 0"
+            :disabled="!canRegisterFullTerm(cls)"
             @change="toggleSelect(cls.id)"
           />
         </label>
@@ -264,7 +286,7 @@ onMounted(loadClasses)
       v-if="!loading && classes.length === 0 && !loadError"
       class="mt-4 text-sm text-gray-500"
     >
-      目前沒有開放報名的期課。
+      目前沒有可顯示的課程。
     </p>
 
     <div

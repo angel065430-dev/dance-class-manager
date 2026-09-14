@@ -21,7 +21,6 @@ export async function fetchOpenClasses(): Promise<ClassWithAvailability[]> {
     `,
     )
     .eq('is_active', true)
-    .eq('is_open_for_registration', true)
     .order('name', { ascending: true })
 
   if (error) throw error
