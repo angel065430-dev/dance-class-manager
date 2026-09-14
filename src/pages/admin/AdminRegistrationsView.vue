@@ -77,6 +77,47 @@ function formatPaymentMethod(method: AdminRegistrationRow['payment_method']) {
   return '尚未提交'
 }
 
+function formatDateTime(value: string | Date) {
+  return new Intl.DateTimeFormat('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(value))
+}
+
+function paymentDeadline(createdAt: string) {
+  return new Date(new Date(createdAt).getTime() + 24 * 60 * 60 * 1000)
+}
+
+function paymentTimeStatus(reg: AdminOrderGroup) {
+  if (reg.payment_status !== 'pending' || !orderHasActive(reg)) return ''
+
+  const differenceMs = paymentDeadline(reg.order_created_at).getTime() - Date.now()
+  const differenceMinutes = Math.ceil(Math.abs(differenceMs) / (60 * 1000))
+
+  if (differenceMinutes < 60) {
+    return differenceMs > 0
+      ? '剩餘 ' + differenceMinutes + ' 分鐘'
+      : '已逾期 ' + differenceMinutes + ' 分鐘'
+  }
+
+  const differenceHours = Math.ceil(differenceMinutes / 60)
+  return differenceMs > 0
+    ? '剩餘約 ' + differenceHours + ' 小時'
+    : '已逾期約 ' + differenceHours + ' 小時'
+}
+
+function isPaymentOverdue(reg: AdminOrderGroup) {
+  return (
+    reg.payment_status === 'pending' &&
+    orderHasActive(reg) &&
+    paymentDeadline(reg.order_created_at).getTime() <= Date.now()
+  )
+}
+
 async function loadRegistrations() {
   loading.value = true
   errorMessage.value = ''
@@ -176,6 +217,7 @@ onMounted(loadRegistrations)
             <th class="py-2 pr-4">手機</th>
             <th class="py-2 pr-4">班級</th>
             <th class="py-2 pr-4">場地／期別</th>
+            <th class="py-2 pr-4">報名／付款期限</th>
             <th class="py-2 pr-4">金額</th>
             <th class="py-2 pr-4">付款方式</th>
             <th class="py-2 pr-4">末五碼</th>
@@ -221,6 +263,30 @@ onMounted(loadRegistrations)
 
             <td class="py-3 pr-4 align-top">
               {{ reg.venue_name }} ・ {{ reg.term_name }}
+            </td>
+
+            <td class="min-w-[10rem] py-3 pr-4 align-top text-xs">
+              <div class="text-gray-700">
+                {{ formatDateTime(reg.order_created_at) }} 報名
+              </div>
+
+              <template v-if="reg.payment_status === 'pending' && orderHasActive(reg)">
+                <div class="mt-1 text-gray-500">
+                  {{ formatDateTime(paymentDeadline(reg.order_created_at)) }} 前付款
+                </div>
+                <div
+                  class="mt-1 font-medium"
+                  :class="isPaymentOverdue(reg) ? 'text-red-700' : 'text-amber-600'"
+                >
+                  {{ paymentTimeStatus(reg) }}
+                </div>
+              </template>
+
+              <div v-else-if="reg.payment_status === 'paid'" class="mt-1 text-green-700">
+                已完成付款
+              </div>
+
+              <div v-else class="mt-1 text-gray-500">訂單已取消</div>
             </td>
 
             <td class="py-3 pr-4 align-top font-medium">

@@ -106,6 +106,7 @@ export interface RegistrationWithClass extends Registration {
   venue_id: string
   venue_name: string
   term_name: string
+  order_created_at: string
   total_amount: number
   payment_status: 'pending' | 'paid'
   payment_method: 'bank_transfer' | 'line_pay' | null
