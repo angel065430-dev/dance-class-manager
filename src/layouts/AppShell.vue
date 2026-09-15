@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 /**
  * AppShell — 全站共用版面。
  *
@@ -24,17 +24,17 @@ async function handleLogout() {
 <template>
   <div class="flex min-h-screen flex-col">
     <header class="border-b border-gray-200 bg-white px-4 py-3">
-      <div class="mx-auto flex max-w-4xl items-center justify-between">
+      <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
         <RouterLink to="/" class="text-lg font-semibold text-gray-900">{{ appName }}</RouterLink>
 
-        <nav class="flex items-center gap-4 text-sm">
+        <nav class="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm">
           <RouterLink to="/courses" class="text-gray-700 hover:text-gray-900">瀏覽課程</RouterLink>
 
           <template v-if="isLoggedIn && !isAdmin">
             <RouterLink to="/my-registrations" class="text-gray-700 hover:text-gray-900"
               >我的報名</RouterLink
             >
-            <span class="text-gray-400">{{ user?.phone }}</span>
+            <span class="hidden text-gray-400 sm:inline">{{ user?.phone }}</span>
             <button class="text-gray-700 hover:text-gray-900" @click="handleLogout">登出</button>
           </template>
 
@@ -45,9 +45,15 @@ async function handleLogout() {
             <RouterLink to="/admin/students" class="text-gray-700 hover:text-gray-900"
               >學生帳號</RouterLink
             >
-            <RouterLink to="/admin/classes" class="text-gray-700 hover:text-gray-900">期課</RouterLink>
-            <RouterLink to="/admin/terms" class="text-gray-700 hover:text-gray-900">期別</RouterLink>
-            <RouterLink to="/admin/venues" class="text-gray-700 hover:text-gray-900">場地</RouterLink>
+            <RouterLink to="/admin/classes" class="text-gray-700 hover:text-gray-900"
+              >期課</RouterLink
+            >
+            <RouterLink to="/admin/terms" class="text-gray-700 hover:text-gray-900"
+              >期別</RouterLink
+            >
+            <RouterLink to="/admin/venues" class="text-gray-700 hover:text-gray-900"
+              >場地</RouterLink
+            >
             <button class="text-gray-700 hover:text-gray-900" @click="handleLogout">登出</button>
           </template>
 
@@ -61,7 +67,7 @@ async function handleLogout() {
       </div>
     </header>
 
-    <main class="flex-1 px-4 py-6">
+    <main class="flex-1 px-4 py-6 sm:py-8">
       <slot />
     </main>
 
@@ -70,4 +76,3 @@ async function handleLogout() {
     </footer>
   </div>
 </template>
-
