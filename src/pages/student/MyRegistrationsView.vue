@@ -11,12 +11,14 @@ import {
   type VenuePaymentSettings,
 } from '@/services/paymentSettings'
 import type { RegistrationWithClass } from '@/types/database'
+import { fetchPublicClassSessions, type PublicClassSession } from '@/services/classSessions'
 import { groupRowsByOrder } from '@/utils/orderGroups'
 
 const route = useRoute()
 const router = useRouter()
 
 const registrations = ref<RegistrationWithClass[]>([])
+const sessionsByClass = ref<Record<string, PublicClassSession[]>>({})
 const paymentSettingsByVenue = ref<Record<string, VenuePaymentSettings | null>>({})
 const loading = ref(true)
 const errorMessage = ref('')
@@ -57,6 +59,27 @@ function formatCurrency(amount: number) {
   }).format(amount)
 }
 
+function formatSessionDate(date: string) {
+  const [year, month, day] = date.split('-').map(Number)
+  const weekday = new Intl.DateTimeFormat('zh-TW', { weekday: 'short' }).format(
+    new Date(year, month - 1, day),
+  )
+
+  return `${month}/${day}（${weekday}）`
+}
+
+function scheduledSessions(classId: string) {
+  return (sessionsByClass.value[classId] ?? []).filter(
+    (session) => session.status === 'scheduled',
+  )
+}
+
+function cancelledSessions(classId: string) {
+  return (sessionsByClass.value[classId] ?? []).filter(
+    (session) => session.status === 'cancelled',
+  )
+}
+
 function formatPaymentMethod(method: RegistrationWithClass['payment_method']) {
   if (method === 'bank_transfer') return '銀行轉帳'
   if (method === 'line_pay') return 'LINE Pay'
@@ -70,6 +93,21 @@ async function loadData() {
   try {
     const rows = await fetchMyRegistrations()
     registrations.value = rows
+
+    const classIds = [...new Set(rows.map((row) => row.class_id).filter(Boolean))]
+    const sessions = await fetchPublicClassSessions(classIds)
+
+    sessionsByClass.value = sessions.reduce<Record<string, PublicClassSession[]>>(
+      (groups, session) => {
+        if (!groups[session.class_id]) {
+          groups[session.class_id] = []
+        }
+
+        groups[session.class_id].push(session)
+        return groups
+      },
+      {},
+    )
 
     const venueIds = [...new Set(rows.map((row) => row.venue_id).filter(Boolean))]
 
@@ -210,22 +248,56 @@ onMounted(async () => {
           <li
             v-for="item in reg.registrations"
             :key="item.id"
-            class="flex items-center justify-between gap-3"
+            class="rounded-lg bg-gray-50 px-3 py-3"
           >
-            <span :class="item.status === 'cancelled' ? 'text-gray-400 line-through' : ''">
-              • {{ item.class_code ? `${item.class_code}｜` : '' }}{{ item.class_name }}
-              <span v-if="item.status === 'cancelled'" class="text-xs no-underline">（已取消）</span>
-            </span>
+            <div class="flex items-center justify-between gap-3">
+              <span
+                class="min-w-0"
+                :class="item.status === 'cancelled' ? 'text-gray-400 line-through' : ''"
+              >
+                • {{ item.class_code ? `${item.class_code}｜` : '' }}{{ item.class_name }}
+                <span v-if="item.status === 'cancelled'" class="text-xs no-underline">
+                  （已取消）
+                </span>
+              </span>
 
-            <button
-              v-if="item.status === 'active' && canSelfCancelOrder(reg)"
-              type="button"
-              class="shrink-0 rounded border border-red-300 px-3 py-1 text-xs font-medium text-red-700 disabled:opacity-50"
-              :disabled="cancellingRegistrationId === item.id"
-              @click="cancelRegistration(item)"
-            >
-              {{ cancellingRegistrationId === item.id ? '取消中...' : '取消報名' }}
-            </button>
+              <button
+                v-if="item.status === 'active' && canSelfCancelOrder(reg)"
+                type="button"
+                class="shrink-0 rounded border border-red-300 px-3 py-1 text-xs font-medium text-red-700 disabled:opacity-50"
+                :disabled="cancellingRegistrationId === item.id"
+                @click="cancelRegistration(item)"
+              >
+                {{ cancellingRegistrationId === item.id ? '取消中...' : '取消報名' }}
+              </button>
+            </div>
+
+            <div class="mt-2 pl-3 text-xs font-normal leading-5">
+              <p v-if="scheduledSessions(item.class_id).length > 0" class="text-gray-600">
+                上課日期：
+                {{
+                  scheduledSessions(item.class_id)
+                    .map((session) => formatSessionDate(session.session_date))
+                    .join('、')
+                }}
+              </p>
+
+              <p v-if="cancelledSessions(item.class_id).length > 0" class="mt-1 text-red-600">
+                停課日期：
+                {{
+                  cancelledSessions(item.class_id)
+                    .map((session) => formatSessionDate(session.session_date))
+                    .join('、')
+                }}
+              </p>
+
+              <p
+                v-if="(sessionsByClass[item.class_id] ?? []).length === 0"
+                class="text-gray-400"
+              >
+                上課日期尚未公布
+              </p>
+            </div>
           </li>
         </ul>
 
