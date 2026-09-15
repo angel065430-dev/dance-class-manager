@@ -24,11 +24,18 @@ async function handleLogout() {
 <template>
   <div class="flex min-h-screen flex-col">
     <header class="border-b border-gray-200 bg-white px-4 py-3">
-      <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
-        <RouterLink to="/" class="text-lg font-semibold text-gray-900">{{ appName }}</RouterLink>
+      <div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
+        <RouterLink :to="{ name: 'home' }" class="shrink-0 text-lg font-semibold text-gray-900">{{
+          appName
+        }}</RouterLink>
 
-        <nav class="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm">
-          <RouterLink to="/courses" class="text-gray-700 hover:text-gray-900">瀏覽課程</RouterLink>
+        <nav
+          class="flex items-center justify-end gap-3 whitespace-nowrap text-xs sm:gap-4 sm:text-sm"
+        >
+          <RouterLink to="/courses" class="text-gray-700 hover:text-gray-900">
+            <span class="sm:hidden">課程</span>
+            <span class="hidden sm:inline">瀏覽課程</span>
+          </RouterLink>
 
           <template v-if="isLoggedIn && !isAdmin">
             <RouterLink to="/my-registrations" class="text-gray-700 hover:text-gray-900"
@@ -42,26 +49,36 @@ async function handleLogout() {
             <RouterLink to="/admin/registrations" class="text-gray-700 hover:text-gray-900"
               >管理後台</RouterLink
             >
-            <RouterLink to="/admin/students" class="text-gray-700 hover:text-gray-900"
+            <RouterLink
+              to="/admin/students"
+              class="hidden text-gray-700 hover:text-gray-900 sm:inline"
               >學生帳號</RouterLink
             >
-            <RouterLink to="/admin/classes" class="text-gray-700 hover:text-gray-900"
+            <RouterLink
+              to="/admin/classes"
+              class="hidden text-gray-700 hover:text-gray-900 sm:inline"
               >期課</RouterLink
             >
-            <RouterLink to="/admin/terms" class="text-gray-700 hover:text-gray-900"
+            <RouterLink to="/admin/terms" class="hidden text-gray-700 hover:text-gray-900 sm:inline"
               >期別</RouterLink
             >
-            <RouterLink to="/admin/venues" class="text-gray-700 hover:text-gray-900"
+            <RouterLink
+              to="/admin/venues"
+              class="hidden text-gray-700 hover:text-gray-900 sm:inline"
               >場地</RouterLink
             >
             <button class="text-gray-700 hover:text-gray-900" @click="handleLogout">登出</button>
           </template>
 
           <template v-else>
-            <RouterLink to="/login" class="text-gray-700 hover:text-gray-900">學生登入</RouterLink>
-            <RouterLink to="/register" class="text-gray-700 hover:text-gray-900"
-              >學生註冊</RouterLink
-            >
+            <RouterLink to="/login" class="text-gray-700 hover:text-gray-900">
+              <span class="sm:hidden">登入</span>
+              <span class="hidden sm:inline">學生登入</span>
+            </RouterLink>
+            <RouterLink to="/register" class="text-gray-700 hover:text-gray-900">
+              <span class="sm:hidden">註冊</span>
+              <span class="hidden sm:inline">學生註冊</span>
+            </RouterLink>
           </template>
         </nav>
       </div>

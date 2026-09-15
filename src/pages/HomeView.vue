@@ -77,15 +77,19 @@ const { isLoggedIn, isAdmin } = useAuth()
             class="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-white/35 via-transparent to-transparent lg:bg-gradient-to-r lg:from-pink-50/80 lg:via-transparent lg:to-transparent"
           ></div>
 
-          <img
-            src="/images/angel-hero.jpg"
-            alt="Angel Zumba 舞蹈動態照片"
-            class="absolute inset-0 h-full w-full object-cover object-[50%_35%]"
-            loading="eager"
-          />
+          <picture>
+            <source srcset="/images/angel-hero.webp" type="image/webp" />
+            <img
+              src="/images/angel-hero.jpg"
+              alt="Angel Zumba 舞蹈動態照片"
+              class="absolute inset-0 h-full w-full object-cover object-[50%_35%]"
+              loading="eager"
+              fetchpriority="high"
+            />
+          </picture>
 
           <div
-            class="absolute bottom-5 right-5 z-20 rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-lg backdrop-blur"
+            class="absolute bottom-5 right-5 z-20 hidden rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-lg backdrop-blur lg:block"
           >
             <p class="text-xs font-semibold tracking-wider text-gray-500">ZUMBA WITH</p>
             <p class="mt-1 text-xl font-black text-gray-900">ANGEL</p>
