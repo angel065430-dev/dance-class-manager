@@ -211,12 +211,15 @@ onMounted(loadClasses)
             整期 NT$ {{ cls.full_term_price }}
           </p>
 
-          <p
+          <div
             v-if="!cls.is_open_for_registration"
-            class="mt-2 inline-block rounded bg-gray-100 px-2 py-1 text-sm font-medium text-gray-600"
+            class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3"
           >
-            期課報名已截止
-          </p>
+            <p class="text-sm font-bold text-amber-800">期課報名已截止</p>
+            <p class="mt-1 text-sm leading-6 text-amber-700">
+              單堂報名將於上課前視剩餘名額開放。
+            </p>
+          </div>
 
           <p
             v-else-if="cls.remaining_seats === 0"
