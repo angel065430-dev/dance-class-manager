@@ -100,11 +100,29 @@ const { isLoggedIn, isAdmin } = useAuth()
 
     <section>
       <div class="text-center">
-        <p class="text-sm font-bold tracking-[0.18em] text-pink-600">START HERE</p>
-        <h2 class="mt-3 text-2xl font-black text-gray-900 sm:text-3xl">第一次使用，很簡單</h2>
-        <p class="mx-auto mt-3 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
-          註冊帳號、選擇課程，再到「我的報名」確認內容與付款資訊。
-        </p>
+        <template v-if="!isLoggedIn">
+          <p class="text-sm font-bold tracking-[0.18em] text-pink-600">START HERE</p>
+          <h2 class="mt-3 text-2xl font-black text-gray-900 sm:text-3xl">第一次使用，很簡單</h2>
+          <p class="mx-auto mt-3 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
+            註冊帳號、選擇課程，再到「我的報名」確認內容與付款資訊。
+          </p>
+        </template>
+
+        <template v-else-if="isAdmin">
+          <p class="text-sm font-bold tracking-[0.18em] text-pink-600">ADMIN</p>
+          <h2 class="mt-3 text-2xl font-black text-gray-900 sm:text-3xl">管理員已登入</h2>
+          <p class="mx-auto mt-3 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
+            前往管理後台處理報名與課程，或瀏覽目前公開的課程資訊。
+          </p>
+        </template>
+
+        <template v-else>
+          <p class="text-sm font-bold tracking-[0.18em] text-pink-600">WELCOME BACK</p>
+          <h2 class="mt-3 text-2xl font-black text-gray-900 sm:text-3xl">歡迎回來！</h2>
+          <p class="mx-auto mt-3 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
+            查看目前課程、確認自己的報名，準備一起開心跳舞。
+          </p>
+        </template>
       </div>
 
       <div class="mt-8 grid gap-4 md:grid-cols-3">

@@ -1,20 +1,20 @@
 <script setup lang="ts">
 /**
- * AppShell — 全站共用版面。
+ * AppShell — 全站共用版面與品牌導覽。
  *
- * Registration MVP（P0）範圍：只提供最基本的導覽（首頁／課程瀏覽／我的報名／
- * 登入登出），不含完整品牌設定（Logo、Hero、公告等，MASTER_SPEC.md 第 32
- * 節，留待 P1 之後的 Admin Foundation 完整實作）。
- *
- * 導覽列的顯示/隱藏只是 UX 層級的方便性，不是安全邊界；真正的存取控制
- * 一律由 Supabase RLS + Role 在後端強制執行（AI_INSTRUCTIONS.md 第 10-11
- * 節）。
+ * 導覽列顯示與路由守衛只是 UX 層級的便利，不是安全邊界；
+ * 真正的存取控制仍由 Supabase RLS 與角色權限在後端執行。
  */
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
 const appName = import.meta.env.VITE_APP_NAME ?? 'Angel Zumba'
+const route = useRoute()
 const { isLoggedIn, isAdmin, user, logout } = useAuth()
+
+function navigationClass(active: boolean) {
+  return active ? 'font-semibold text-pink-600' : 'text-gray-700 transition hover:text-pink-600'
+}
 
 async function handleLogout() {
   await logout()
@@ -25,57 +25,85 @@ async function handleLogout() {
   <div class="flex min-h-screen flex-col">
     <header class="border-b border-gray-200 bg-white px-4 py-3">
       <div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
-        <RouterLink :to="{ name: 'home' }" class="shrink-0 text-lg font-semibold text-gray-900">{{
-          appName
-        }}</RouterLink>
+        <RouterLink
+          :to="{ name: 'home' }"
+          class="shrink-0 text-lg font-semibold text-gray-900 transition hover:text-pink-600"
+        >
+          {{ appName }}
+        </RouterLink>
 
         <nav
+          aria-label="主要導覽"
           class="flex items-center justify-end gap-3 whitespace-nowrap text-xs sm:gap-4 sm:text-sm"
         >
-          <RouterLink to="/courses" class="text-gray-700 hover:text-gray-900">
+          <RouterLink to="/courses" :class="navigationClass(route.name === 'courses')">
             <span class="sm:hidden">課程</span>
             <span class="hidden sm:inline">瀏覽課程</span>
           </RouterLink>
 
           <template v-if="isLoggedIn && !isAdmin">
-            <RouterLink to="/my-registrations" class="text-gray-700 hover:text-gray-900"
-              >我的報名</RouterLink
+            <RouterLink
+              to="/my-registrations"
+              :class="navigationClass(route.name === 'my-registrations')"
             >
+              我的報名
+            </RouterLink>
+
             <span class="hidden text-gray-400 sm:inline">{{ user?.phone }}</span>
-            <button class="text-gray-700 hover:text-gray-900" @click="handleLogout">登出</button>
+
+            <button class="text-gray-700 transition hover:text-pink-600" @click="handleLogout">
+              登出
+            </button>
           </template>
 
           <template v-else-if="isLoggedIn && isAdmin">
-            <RouterLink to="/admin/registrations" class="text-gray-700 hover:text-gray-900"
-              >管理後台</RouterLink
+            <RouterLink
+              to="/admin/registrations"
+              :class="navigationClass(route.name === 'admin-registrations')"
             >
+              管理後台
+            </RouterLink>
+
             <RouterLink
               to="/admin/students"
-              class="hidden text-gray-700 hover:text-gray-900 sm:inline"
-              >學生帳號</RouterLink
+              :class="['hidden sm:inline', navigationClass(route.name === 'admin-students')]"
             >
+              學生帳號
+            </RouterLink>
+
             <RouterLink
               to="/admin/classes"
-              class="hidden text-gray-700 hover:text-gray-900 sm:inline"
-              >期課</RouterLink
+              :class="['hidden sm:inline', navigationClass(route.name === 'admin-classes')]"
             >
-            <RouterLink to="/admin/terms" class="hidden text-gray-700 hover:text-gray-900 sm:inline"
-              >期別</RouterLink
+              期課
+            </RouterLink>
+
+            <RouterLink
+              to="/admin/terms"
+              :class="['hidden sm:inline', navigationClass(route.name === 'admin-terms')]"
             >
+              期別
+            </RouterLink>
+
             <RouterLink
               to="/admin/venues"
-              class="hidden text-gray-700 hover:text-gray-900 sm:inline"
-              >場地</RouterLink
+              :class="['hidden sm:inline', navigationClass(route.name === 'admin-venues')]"
             >
-            <button class="text-gray-700 hover:text-gray-900" @click="handleLogout">登出</button>
+              場地
+            </RouterLink>
+
+            <button class="text-gray-700 transition hover:text-pink-600" @click="handleLogout">
+              登出
+            </button>
           </template>
 
           <template v-else>
-            <RouterLink to="/login" class="text-gray-700 hover:text-gray-900">
+            <RouterLink to="/login" :class="navigationClass(route.name === 'student-login')">
               <span class="sm:hidden">登入</span>
               <span class="hidden sm:inline">學生登入</span>
             </RouterLink>
-            <RouterLink to="/register" class="text-gray-700 hover:text-gray-900">
+
+            <RouterLink to="/register" :class="navigationClass(route.name === 'student-register')">
               <span class="sm:hidden">註冊</span>
               <span class="hidden sm:inline">學生註冊</span>
             </RouterLink>
@@ -88,8 +116,18 @@ async function handleLogout() {
       <slot />
     </main>
 
-    <footer class="border-t border-gray-200 px-4 py-3 text-center text-xs text-gray-400">
-      {{ appName }}
+    <footer class="border-t border-gray-200 px-4 py-5 text-center text-xs">
+      <p class="font-semibold text-gray-700">{{ appName }}</p>
+      <p class="mt-1 tracking-[0.16em] text-gray-400">SHINE. MOVE. SMILE.</p>
+      <a
+        href="https://www.instagram.com/angel.kao_zin/"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="mt-2 inline-block font-medium text-pink-600 transition hover:text-pink-700 hover:underline"
+        aria-label="在 Instagram 查看 Angel Zumba"
+      >
+        Instagram｜@angel.kao_zin
+      </a>
     </footer>
   </div>
 </template>
