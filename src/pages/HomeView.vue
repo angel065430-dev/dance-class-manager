@@ -1,3 +1,8 @@
+<script setup lang="ts">
+import { useAuth } from '@/composables/useAuth'
+
+const { isLoggedIn, isAdmin } = useAuth()
+</script>
 <template>
   <div class="mx-auto max-w-6xl space-y-14 pb-8">
     <section
@@ -5,7 +10,7 @@
     >
       <div class="grid items-stretch lg:grid-cols-[1.05fr_0.95fr]">
         <div
-          class="relative z-10 flex flex-col justify-center px-6 py-10 sm:px-10 sm:py-14 lg:px-14 lg:py-20"
+          class="relative z-10 order-2 flex flex-col justify-center px-6 py-10 sm:px-10 sm:py-14 lg:order-1 lg:px-14 lg:py-20"
         >
           <p
             class="mb-5 inline-flex w-fit rounded-full bg-pink-100 px-4 py-2 text-xs font-bold tracking-[0.2em] text-pink-700"
@@ -36,6 +41,23 @@
             </RouterLink>
 
             <RouterLink
+              v-if="!isLoggedIn"
+              to="/login"
+              class="rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-bold text-gray-800 transition hover:border-pink-300 hover:text-pink-700"
+            >
+              學生登入
+            </RouterLink>
+
+            <RouterLink
+              v-else-if="isAdmin"
+              to="/admin/registrations"
+              class="rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-bold text-gray-800 transition hover:border-pink-300 hover:text-pink-700"
+            >
+              管理後台
+            </RouterLink>
+
+            <RouterLink
+              v-else
               to="/my-registrations"
               class="rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-bold text-gray-800 transition hover:border-pink-300 hover:text-pink-700"
             >
@@ -43,12 +65,14 @@
             </RouterLink>
           </div>
 
-          <p class="mt-5 text-xs leading-5 text-gray-500">
+          <p v-if="!isLoggedIn" class="mt-5 text-xs leading-5 text-gray-500">
             第一次使用請先註冊；報名完成後，請於24小時內完成付款。
           </p>
         </div>
 
-        <div class="relative min-h-[430px] overflow-hidden bg-gray-100 sm:min-h-[520px]">
+        <div
+          class="relative order-1 min-h-[380px] overflow-hidden bg-gray-100 sm:min-h-[520px] lg:order-2"
+        >
           <div
             class="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-white/35 via-transparent to-transparent lg:bg-gradient-to-r lg:from-pink-50/80 lg:via-transparent lg:to-transparent"
           ></div>
@@ -86,13 +110,41 @@
           >
             01
           </span>
-          <h3 class="mt-5 text-lg font-bold text-gray-900">註冊或登入</h3>
-          <p class="mt-2 text-sm leading-6 text-gray-600">
-            第一次使用請以中文本名、本人手機號碼及6位數PIN完成註冊。
-          </p>
-          <RouterLink to="/register" class="mt-4 inline-block text-sm font-bold text-pink-700">
-            前往註冊 →
-          </RouterLink>
+          <template v-if="!isLoggedIn">
+            <h3 class="mt-5 text-lg font-bold text-gray-900">註冊或登入</h3>
+            <p class="mt-2 text-sm leading-6 text-gray-600">
+              第一次使用請以中文本名、本人手機號碼及6位數PIN完成註冊。
+            </p>
+            <RouterLink to="/register" class="mt-4 inline-block text-sm font-bold text-pink-700">
+              前往註冊 →
+            </RouterLink>
+          </template>
+
+          <template v-else-if="isAdmin">
+            <h3 class="mt-5 text-lg font-bold text-gray-900">管理員已登入</h3>
+            <p class="mt-2 text-sm leading-6 text-gray-600">
+              可直接前往管理後台查看報名、付款與課程資料。
+            </p>
+            <RouterLink
+              to="/admin/registrations"
+              class="mt-4 inline-block text-sm font-bold text-pink-700"
+            >
+              前往管理後台 →
+            </RouterLink>
+          </template>
+
+          <template v-else>
+            <h3 class="mt-5 text-lg font-bold text-gray-900">帳號已登入</h3>
+            <p class="mt-2 text-sm leading-6 text-gray-600">
+              你已完成登入，可以直接選擇課程或查看自己的報名紀錄。
+            </p>
+            <RouterLink
+              to="/my-registrations"
+              class="mt-4 inline-block text-sm font-bold text-pink-700"
+            >
+              查看我的報名 →
+            </RouterLink>
+          </template>
         </article>
 
         <article class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
