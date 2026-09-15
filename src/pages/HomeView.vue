@@ -71,7 +71,7 @@ const { isLoggedIn, isAdmin } = useAuth()
         </div>
 
         <div
-          class="relative order-1 min-h-[380px] overflow-hidden bg-gray-100 sm:min-h-[520px] lg:order-2"
+          class="relative order-1 min-h-[420px] overflow-hidden bg-gray-100 sm:min-h-[520px] lg:order-2"
         >
           <div
             class="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-white/35 via-transparent to-transparent lg:bg-gradient-to-r lg:from-pink-50/80 lg:via-transparent lg:to-transparent"
@@ -82,7 +82,7 @@ const { isLoggedIn, isAdmin } = useAuth()
             <img
               src="/images/angel-hero.jpg"
               alt="Angel Zumba 舞蹈動態照片"
-              class="absolute inset-0 h-full w-full object-cover object-[50%_35%]"
+              class="absolute inset-0 h-full w-full object-cover object-[50%_15%] sm:object-[50%_20%] lg:object-[50%_35%]"
               loading="eager"
               fetchpriority="high"
             />
