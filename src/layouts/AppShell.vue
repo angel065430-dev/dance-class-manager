@@ -116,14 +116,14 @@ async function handleLogout() {
       <slot />
     </main>
 
-    <footer class="border-t border-gray-200 px-4 py-5 text-center text-xs">
-      <p class="font-semibold text-gray-700">{{ appName }}</p>
-      <p class="mt-1 tracking-[0.16em] text-gray-400">SHINE. MOVE. SMILE.</p>
+    <footer class="border-t border-pink-100 bg-pink-50/40 px-4 py-7 text-center">
+      <p class="text-base font-bold text-gray-800">{{ appName }}</p>
+      <p class="mt-2 text-xs font-medium tracking-[0.16em] text-gray-500">SHINE. MOVE. SMILE.</p>
       <a
         href="https://www.instagram.com/angel.kao_zin/"
         target="_blank"
         rel="noopener noreferrer"
-        class="mt-2 inline-block font-medium text-pink-600 transition hover:text-pink-700 hover:underline"
+        class="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-pink-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2"
         aria-label="在 Instagram 查看 Angel Zumba"
       >
         Instagram｜@angel.kao_zin
